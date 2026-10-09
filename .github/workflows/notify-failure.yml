@@ -1,0 +1,37 @@
+# Turns failed bundle builds and failed weekly checks into a GitHub issue (which e-mails the repository owner),
+# and closes that issue again when the same job succeeds. One issue per distinct run title; repeats become comments.
+name: Notify on CI failure
+
+on:
+  workflow_run:
+    workflows: ['Build ModLoader bundle', 'Check upstream for new releases']
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  notify:
+    # cancelled and skipped runs are not failures
+    if: contains(fromJSON('["success","failure","timed_out"]'), github.event.workflow_run.conclusion)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # passed through the environment, never interpolated into the script: run titles contain user-supplied inputs
+          RUN_TITLE: ${{ github.event.workflow_run.display_title }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          event=failure
+          if [ "$CONCLUSION" = "success" ]; then event=success; fi
+          node bundle/scripts/ci-failure-issue.mjs --event "$event" --title "$RUN_TITLE" --run-url "$RUN_URL"

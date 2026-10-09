@@ -1,6 +1,7 @@
 # Builds a ModLoader bundle (BeforeSC2.js + all mods + licenses + manifest) from any repo/ref and publishes it as a release.
 # Runs from the repository root; the scripts live in bundle/scripts/.
 name: Build ModLoader bundle
+run-name: Build bundle ${{ inputs.ref }} from ${{ inputs.repo }}
 
 on:
   workflow_dispatch:

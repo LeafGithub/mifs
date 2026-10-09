@@ -1,6 +1,7 @@
 # Weekly: looks for official ModLoader releases that have no bundle yet and starts "Build ModLoader bundle" for them.
 # Forks are never built automatically; publish those by running "Build ModLoader bundle" by hand.
 name: Check upstream for new releases
+run-name: Weekly upstream check
 
 on:
   schedule:
@@ -28,7 +29,7 @@ jobs:
           node-version: 20
 
       - name: Unit tests for the checker
-        run: node --test bundle/scripts/check-upstream.test.mjs
+        run: node --test bundle/scripts/check-upstream.test.mjs bundle/scripts/ci-failure-issue.test.mjs
 
       - name: Find official releases without a bundle
         env:

@@ -33,7 +33,9 @@ Run the e2e suite against a packaged build with `MIFS_EXE="packages/desktop/rele
 - **Check upstream for new releases** (`.github/workflows/check-upstream.yml`, Mondays 06:17 UTC or manual): starts the build for official
   `x.y.z` tags newer than the newest published upstream bundle (at most 2 per run). Forks and older tags are never built automatically.
   Try it without building anything: `gh workflow run check-upstream.yml -f dry_run=true`.
-- Checker tests: `node --test bundle/scripts/check-upstream.test.mjs`.
+- **Notify on CI failure** (`.github/workflows/notify-failure.yml`): when either workflow fails it opens a `ci-failure` issue (GitHub e-mails
+  you about issues), comments on repeats, and closes the issue when the same job succeeds again.
+- Checker tests: `node --test bundle/scripts/check-upstream.test.mjs bundle/scripts/ci-failure-issue.test.mjs`.
 
 ## Packaging notes
 
