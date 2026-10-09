@@ -8,7 +8,8 @@ import { Checkbox } from '../components/ui/checkbox';
 import { formatBytes } from '../lib/utils';
 import { useApp } from '../store';
 
-export function ModsStep() {
+/** The fine-pick list of bundled mods. Shown inside the Install step after "Customize". */
+export function ModsEditor() {
   const bundle = useApp((s) => s.bundles.find((b) => b.id === s.bundleId));
   const selected = useApp((s) => s.selected);
   const notice = useApp((s) => s.notice);
@@ -16,7 +17,7 @@ export function ModsStep() {
   const reset = useApp((s) => s.resetMods);
   const chosen = useMemo(() => new Set(selected), [selected]);
 
-  if (!bundle) return <p className="text-sm text-muted-foreground">Pick a loader bundle first.</p>;
+  if (!bundle) return null;
   const manifest = bundle.manifest;
   const total = manifest.mods.filter((m) => chosen.has(m.id)).reduce((n, m) => n + m.size, 0);
 
@@ -24,7 +25,7 @@ export function ModsStep() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          The standard set works with mods made for ModLoader. {chosen.size} of {manifest.mods.length} selected · {formatBytes(total)}
+          {chosen.size} of {manifest.mods.length} selected · {formatBytes(total)}. Mods that others need stay on.
         </p>
         <Button variant="ghost" size="sm" onClick={reset}>
           Restore defaults
@@ -37,7 +38,7 @@ export function ModsStep() {
         </p>
       )}
 
-      <Card className="divide-y">
+      <Card className="max-h-80 divide-y overflow-y-auto">
         <ul aria-label="Mods">
           {manifest.mods.map((m) => {
             const blockedBy = chosen.has(m.id) ? dependentsOf(manifest, m.id, selected) : [];

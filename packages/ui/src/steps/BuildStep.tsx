@@ -1,9 +1,12 @@
-import { CircleAlert, CircleCheck, FolderSearch, Hammer, RotateCcw, Save } from 'lucide-react';
+import { defaultSelection } from '@mifs/core';
+import { CircleAlert, CircleCheck, FolderSearch, Hammer, RotateCcw, Save, SlidersHorizontal } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import { formatBytes } from '../lib/utils';
 import { useApp } from '../store';
+import { ModsEditor } from './ModsEditor';
 
 export function BuildStep() {
   const bundle = useApp((s) => s.bundles.find((b) => b.id === s.bundleId));
@@ -16,6 +19,11 @@ export function BuildStep() {
   const reset = useApp((s) => s.reset);
   const showInFolder = useApp((s) => s.showInFolder);
 
+  const [customizing, setCustomizing] = useState(false);
+  const standard = bundle ? defaultSelection(bundle.manifest) : [];
+  const isStandard = selected.length === standard.length && standard.every((id) => selected.includes(id));
+  const modsLabel = bundle ? (isStandard ? `Standard set: ${selected.length} mods` : `Custom: ${selected.length} of ${bundle.manifest.mods.length} mods`) : '—';
+
   const ready = bundle && game && outputPath && selected.length > 0;
 
   return (
@@ -23,9 +31,21 @@ export function BuildStep() {
       <Card className="divide-y text-sm">
         <Row label="Loader" value={bundle ? `ModLoader ${bundle.manifest.loader.version} (${bundle.manifest.kind})` : '—'} />
         <Row label="Game" value={game?.name ?? '—'} />
-        <Row label="Mods" value={`${selected.length} selected`} />
+        <Row
+          label="Mods"
+          value={modsLabel}
+          action={
+            run.status === 'idle' || run.status === 'error' ? (
+              <Button variant="ghost" size="sm" onClick={() => setCustomizing((v) => !v)} aria-expanded={customizing}>
+                <SlidersHorizontal /> {customizing ? 'Done' : 'Customize…'}
+              </Button>
+            ) : null
+          }
+        />
         <Row label="Save as" value={outputPath ?? 'not chosen yet'} mono />
       </Card>
+
+      {customizing && run.status !== 'done' && <ModsEditor />}
 
       {run.status !== 'done' && (
         <div className="flex flex-wrap gap-2">
@@ -80,11 +100,12 @@ export function BuildStep() {
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({ label, value, mono, action }: { label: string; value: string; mono?: boolean; action?: React.ReactNode }) {
   return (
-    <div className="flex gap-4 px-4 py-2.5">
+    <div className="flex items-center gap-4 px-4 py-2.5">
       <span className="w-20 shrink-0 text-muted-foreground">{label}</span>
-      <span className={mono ? 'min-w-0 break-all font-mono text-xs leading-5' : 'min-w-0 break-words'}>{value}</span>
+      <span className={mono ? 'min-w-0 flex-1 break-all font-mono text-xs leading-5' : 'min-w-0 flex-1 break-words'}>{value}</span>
+      {action}
     </div>
   );
 }

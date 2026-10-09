@@ -67,12 +67,15 @@ test('imports a bundle, installs ModLoader into a game, and writes a working pag
   await expect(page.getByText('Tiny Game.html')).toBeVisible();
   await page.getByRole('button', { name: 'Next' }).click();
 
-  // 3. mods: dependencies are protected
-  await expect(page.getByRole('heading', { name: 'Choose mods' })).toBeVisible();
+  // 3. install: the standard set is the default, and there is no separate mods step
+  await expect(page.getByRole('heading', { name: 'Create your game' })).toBeVisible();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Mods' })).toHaveCount(0);
+  await expect(page.getByText(/Standard set: \d+ mods/)).toBeVisible();
+  await expect(page.locator('#mod-ConflictChecker')).toHaveCount(0); // the list is hidden until asked for
+  await page.getByRole('button', { name: 'Customize…' }).click();
   await expect(page.locator('#mod-ConflictChecker')).toBeDisabled(); // ModSubUiAngularJs needs it
-  await page.getByRole('button', { name: 'Next' }).click();
-
-  // 4. install
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect(page.locator('#mod-ConflictChecker')).toHaveCount(0);
   await page.getByRole('button', { name: /Choose where to save/ }).click();
   await expect(page.getByText(out, { exact: false }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Create modded game' }).click();
@@ -86,6 +89,33 @@ test('imports a bundle, installs ModLoader into a game, and writes a working pag
   expect(statSync(out).size).toBeGreaterThan(5_000_000);
   expect(existsSync(`${out}.part`)).toBe(false);
   expect(readFileSync(gamePath, 'utf8')).toBe(GAME); // the original is untouched
+});
+
+test('customizing the mod set changes what is embedded, and restoring defaults brings it back', async () => {
+  const gamePath = join(tmp, 'Custom Game.html');
+  writeFileSync(gamePath, GAME);
+  const out = join(tmp, 'Custom Game.mod.html');
+  const page = await launch();
+  await stubDialogs({ open: [BUNDLE, gamePath], save: out });
+  await page.getByRole('button', { name: 'Import bundle folder…' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: /Choose game/ }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+
+  await page.getByRole('button', { name: 'Customize…' }).click();
+  const total = await page.locator('ul[aria-label="Mods"] li').count();
+  await page.locator('#mod-DoLLinkButtonFilter').click(); // nothing depends on it
+  await expect(page.getByText(`Custom: ${total - 1} of ${total} mods`)).toBeVisible();
+  await page.getByRole('button', { name: 'Restore defaults' }).click();
+  await expect(page.getByText(`Standard set: ${total} mods`)).toBeVisible();
+  await page.locator('#mod-DoLLinkButtonFilter').click();
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+
+  await page.getByRole('button', { name: /Choose where to save/ }).click();
+  await page.getByRole('button', { name: 'Create modded game' }).click();
+  await expect(page.getByText('Done', { exact: true })).toBeVisible({ timeout: 60_000 });
+  const zips = JSON.parse(/window\.modDataValueZipList = (\[.*?\]);/s.exec(readFileSync(out, 'utf8'))![1]!) as string[];
+  expect(zips.length).toBe(total - 1);
 });
 
 test('refuses to write anywhere the user did not choose', async () => {

@@ -7,7 +7,6 @@ import { STEPS, StoreContext, createAppStore, useApp } from './store';
 import { BuildStep } from './steps/BuildStep';
 import { BundleStep } from './steps/BundleStep';
 import { GameStep } from './steps/GameStep';
-import { ModsStep } from './steps/ModsStep';
 
 export function App({ platform }: { platform: Platform }) {
   const store = useMemo(() => createAppStore(platform), [platform]);
@@ -21,8 +20,7 @@ export function App({ platform }: { platform: Platform }) {
 const TITLES = [
   ['Choose a loader', 'ModLoader and the mods that come with it.'],
   ['Choose a game', 'The game you want to install ModLoader into.'],
-  ['Choose mods', 'Start from the standard set, then adjust.'],
-  ['Create your game', 'Review and write the modded game file.'],
+  ['Create your game', 'Review, then write the modded game file.'],
 ] as const;
 
 function Shell() {
@@ -32,13 +30,12 @@ function Shell() {
   const error = useApp((s) => s.error);
   const bundleId = useApp((s) => s.bundleId);
   const game = useApp((s) => s.game);
-  const selected = useApp((s) => s.selected);
   const running = useApp((s) => s.run.status === 'running');
   const busy = useApp((s) => s.gameBusy !== null);
 
   useEffect(() => void init(), [init]);
 
-  const canNext = [bundleId !== null, game !== null && !busy, selected.length > 0, false][step] ?? false;
+  const canNext = [bundleId !== null, game !== null && !busy, false][step] ?? false;
   const [title, hint] = TITLES[step]!;
 
   return (
@@ -95,8 +92,7 @@ function Shell() {
           )}
           {step === 0 && <BundleStep />}
           {step === 1 && <GameStep />}
-          {step === 2 && <ModsStep />}
-          {step === 3 && <BuildStep />}
+          {step === 2 && <BuildStep />}
         </div>
 
         <footer className="mt-4 flex justify-between border-t pt-4">
