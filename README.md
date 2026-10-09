@@ -26,6 +26,15 @@ Test fixtures: build a bundle with
 `node bundle/scripts/build-bundle.mjs --src ../modloader-lab/work/modloader-src --out bundle/dist`.
 Run the e2e suite against a packaged build with `MIFS_EXE="packages/desktop/release/win-unpacked/MIFS.exe"`.
 
+## Bundles and the catalog (CI)
+
+- **Build ModLoader bundle** (`.github/workflows/build-bundle.yml`, manual): builds any ModLoader repo/ref and publishes it as a release
+  (`loader-<id>`) plus an updated `catalog` release. Forks are published as pre-releases.
+- **Check upstream for new releases** (`.github/workflows/check-upstream.yml`, Mondays 06:17 UTC or manual): starts the build for official
+  `x.y.z` tags newer than the newest published upstream bundle (at most 2 per run). Forks and older tags are never built automatically.
+  Try it without building anything: `gh workflow run check-upstream.yml -f dry_run=true`.
+- Checker tests: `node --test bundle/scripts/check-upstream.test.mjs`.
+
 ## Packaging notes
 
 - Output: `MIFS-Setup-<version>.exe` (NSIS, per-user, no admin) and `MIFS-<version>-portable.exe`.
