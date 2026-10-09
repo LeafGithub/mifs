@@ -1,0 +1,28 @@
+{
+  "_comment": "Zips to build and embed, relative to <ModLoader checkout>/mod/. Order = default load order.",
+  "mods": [
+    "ModLoaderGui/ModLoaderGui.mod.zip",
+    "ConflictChecker/ConflictChecker.mod.zip",
+    "ImageLoaderHook/ModLoader DoL ImageLoaderHook.mod.zip",
+    "ModSubUiAngularJs/ModSubUiAngularJs.mod.zip",
+    "BeautySelectorAddon/BeautySelectorAddon.mod.zip",
+    "ImageLoaderHook2BeautySelectorAddon/ImageLoaderHook2BeautySelectorAddon.mod.zip",
+    "CheckGameVersion/CheckGameVersion.mod.zip",
+    "CheckDoLCompressorDictionaries/CheckDoLCompressorDictionaries.mod.zip",
+    "TweeReplacerLinker/TweeReplacerLinker.mod.zip",
+    "TweeReplacer/TweeReplacer.mod.zip",
+    "I18nTweeReplacer/I18nTweeReplacer.mod.zip",
+    "I18nTweeList/I18nTweeList.mod.zip",
+    "I18nScriptList/I18nScriptList.mod.zip",
+    "ReplacePatch/ReplacePatcher.mod.zip",
+    "TweePrefixPostfixAddon/TweePrefixPostfixAddon.mod.zip",
+    "Diff3WayMerge/Diff3WayMerge.mod.zip",
+    "DoLTimeWrapperAddon/DoLTimeWrapperAddon.mod.zip",
+    "ModdedClothesAddon/ModdedClothesAddon.mod.zip",
+    "ModdedHairAddon/ModdedHairAddon.mod.zip",
+    "ModdedFeatsAddon/ModdedFeatsAddon.mod.zip",
+    "SweetAlert2Mod/SweetAlert2Mod.mod.zip",
+    "ModuleCssReplacer/ModuleCssReplacer.mod.zip",
+    "DoLLinkButtonFilter/DoLLinkButtonFilter.mod.zip"
+  ]
+}

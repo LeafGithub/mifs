@@ -1,0 +1,10 @@
+node_modules/
+out/
+release/
+dist/
+dist-*/
+work/
+test-results/
+*.log
+.tmp-out/
+.DS_Store

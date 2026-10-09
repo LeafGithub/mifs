@@ -1,0 +1,62 @@
+# Builds a ModLoader bundle (BeforeSC2.js + all mods + licenses + manifest) from any repo/ref and publishes it as a release.
+# Runs from the repository root; the scripts live in bundle/scripts/.
+name: Build ModLoader bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: ModLoader git URL (upstream by default; forks are published as pre-releases)
+        default: https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoader.git
+      ref:
+        description: Tag, branch or commit to build
+        default: '2.101.1'
+
+permissions:
+  contents: write # create releases
+
+concurrency:
+  group: bundle-${{ inputs.repo }}-${{ inputs.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20 # upstream CI uses 18; 24 was also verified locally
+
+      - name: Enable corepack (each mod pins its own yarn version)
+        run: corepack enable
+
+      - name: Build bundle
+        id: bundle
+        run: node bundle/scripts/build-bundle.mjs --repo "${{ inputs.repo }}" --ref "${{ inputs.ref }}" --out dist
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="loader-${{ steps.bundle.outputs.id }}"
+          flags=""
+          if [ "${{ steps.bundle.outputs.kind }}" != "upstream" ]; then flags="--prerelease"; fi
+          notes="ModLoader ${{ steps.bundle.outputs.version }} built from ${{ inputs.repo }} @ ${{ inputs.ref }}. See manifest.json for the exact commits and hashes."
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/manifest.json "dist/${{ steps.bundle.outputs.zip }}" --clobber
+          else
+            gh release create "$tag" dist/manifest.json "dist/${{ steps.bundle.outputs.zip }}" \
+              --title "ModLoader ${{ steps.bundle.outputs.version }} (${{ steps.bundle.outputs.id }})" --notes "$notes" $flags
+          fi
+
+      - name: Update catalog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node bundle/scripts/make-catalog.mjs "${{ github.repository }}" > catalog.json
+          # fixed tag so clients always find it at .../releases/download/catalog/catalog.json
+          gh release view catalog >/dev/null 2>&1 || gh release create catalog --title "Bundle catalog" --notes "Index of published bundles. Do not delete." --prerelease
+          gh release upload catalog catalog.json --clobber

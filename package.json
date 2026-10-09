@@ -1,0 +1,15 @@
+{
+  "name": "mifs",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @mifs/desktop",
+    "dev:ui": "npm run dev -w @mifs/ui",
+    "build": "npm run build -w @mifs/desktop",
+    "test": "npm test -w @mifs/core",
+    "e2e": "npm run e2e -w @mifs/desktop",
+    "typecheck": "npm run typecheck -w @mifs/core && npm run typecheck -w @mifs/ui && npm run typecheck -w @mifs/desktop"
+  }
+}

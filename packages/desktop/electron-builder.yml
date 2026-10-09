@@ -1,0 +1,38 @@
+# Windows packaging. Everything the app needs is bundled into out/ by electron-vite, so nothing from node_modules ships.
+appId: dev.mifs.app
+productName: ModLoader Installer for SugarCube
+executableName: MIFS
+copyright: MIT-licensed tooling; see licenses in the app folder
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+electronVersion: 44.7.0 # pinned: electron-builder needs an exact version
+asar: true
+npmRebuild: false
+compression: normal
+extraResources:
+  # build-from-source mode runs this script (and reads mods.json next to it) with the user's own Node.js
+  - from: ../../bundle/scripts/build-bundle.mjs
+    to: bundle/scripts/build-bundle.mjs
+  - from: ../../bundle/mods.json
+    to: bundle/mods.json
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch: x64
+    - target: portable
+      arch: x64
+  artifactName: MIFS-${version}-${arch}.${ext}
+nsis:
+  shortcutName: ModLoader Installer for SugarCube
+  oneClick: false
+  perMachine: false # installs for the current user, no admin prompt
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false # keeps downloaded games and installed bundles
+  artifactName: MIFS-Setup-${version}.${ext}
+portable:
+  artifactName: MIFS-${version}-portable.${ext}

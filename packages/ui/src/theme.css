@@ -1,0 +1,65 @@
+/* shadcn/ui-style design tokens (dark). Import after `@import "tailwindcss"` in the host app. */
+:root {
+  color-scheme: dark;
+  --background: oklch(0.17 0.012 265);
+  --foreground: oklch(0.96 0.005 265);
+  --card: oklch(0.21 0.014 265);
+  --card-foreground: oklch(0.96 0.005 265);
+  --muted: oklch(0.26 0.014 265);
+  --muted-foreground: oklch(0.72 0.02 265);
+  --border: oklch(0.31 0.016 265);
+  --input: oklch(0.31 0.016 265);
+  --primary: oklch(0.74 0.14 300);
+  --primary-foreground: oklch(0.17 0.03 300);
+  --accent: oklch(0.28 0.03 300);
+  --accent-foreground: oklch(0.96 0.005 265);
+  --destructive: oklch(0.7 0.19 25);
+  --warning: oklch(0.82 0.15 85);
+  --success: oklch(0.78 0.15 155);
+  --ring: oklch(0.74 0.14 300);
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
