@@ -54,6 +54,8 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
   const logListeners = new Set<(lines: string[]) => void>();
   const buildLog = (lines: string[]) => logListeners.forEach((l) => l(lines));
   let cancelled = false;
+  let catalogRepo = 'LeafGithub/mifs';
+  let hasToken = false;
   let bundles = opts.bundles ?? [];
   const game = (name: string, source: GameFile['source']): GameFile => ({ id: `g-${name}`, name, size: 57_188_965, source });
 
@@ -89,6 +91,32 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
       },
     },
     shell: { showInFolder: async () => {} },
+    catalog: {
+      list: async () => {
+        await wait(delay / 2);
+        const installed = new Set(bundles.map((b) => b.id));
+        const entry = (id: string, version: string, kind: 'upstream' | 'fork', builtAt: string) => ({ id, kind, version, ref: version, commit: 'abcdef0', builtAt, modCount: 23, bundleSize: 8_230_356, prerelease: kind === 'fork', installed: installed.has(id) });
+        return {
+          source: 'LeafGithub/mifs',
+          entries: [entry('upstream-2.101.1-17c16d9', '2.101.1', 'upstream', '2026-10-09T16:00:00Z'), entry('maplebirchleaf-2.102.0-aae1d5d', '2.102.0', 'fork', '2026-10-08T12:00:00Z')],
+        };
+      },
+      install: async (id) => {
+        for (let i = 1; i <= 4; i++) {
+          emit({ kind: 'download', label: `Downloading… ${i * 25}%`, fraction: i / 4 });
+          await wait(delay / 2);
+        }
+        const info = { ...MOCK_BUNDLE, id };
+        bundles = [...bundles.filter((b) => b.id !== id), info];
+        return info;
+      },
+      getSettings: async () => ({ repo: catalogRepo, hasToken }),
+      saveSettings: async (patch) => {
+        if (patch.repo !== undefined) catalogRepo = patch.repo;
+        if (patch.token !== undefined) hasToken = patch.token !== null && patch.token !== '';
+        return { repo: catalogRepo, hasToken };
+      },
+    },
     build: {
       preflight: async () => ({
         git: { found: true, version: '2.55.0', ok: true },

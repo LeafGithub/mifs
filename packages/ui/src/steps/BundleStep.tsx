@@ -5,6 +5,7 @@ import { Card } from '../components/ui/card';
 import { formatBytes, cn } from '../lib/utils';
 import { useApp } from '../store';
 import { BuildPanel } from './BuildPanel';
+import { CatalogPanel } from './CatalogPanel';
 
 export function BundleStep() {
   const bundles = useApp((s) => s.bundles);
@@ -14,6 +15,7 @@ export function BundleStep() {
   const importBundle = useApp((s) => s.importBundle);
   const remove = useApp((s) => s.removeBundle);
   const canBuild = useApp((s) => s.canBuild);
+  const canCatalog = useApp((s) => s.canCatalog);
 
   return (
     <div className="flex flex-col gap-4">
@@ -69,6 +71,8 @@ export function BundleStep() {
           );
         })}
       </ul>
+
+      {canCatalog && <CatalogPanel />}
 
       <div>
         <Button variant="outline" onClick={importBundle}>

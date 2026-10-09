@@ -3,6 +3,9 @@ export { PlatformError } from './platform';
 export type {
   BuildRequest,
   BundleInfo,
+  CatalogEntry,
+  CatalogList,
+  CatalogSettings,
   GameAdapter,
   GameFile,
   InjectRequest,

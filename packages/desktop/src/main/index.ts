@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { handle } from './ipc';
 import { importBundleFolder, listBundles, removeBundle } from './services/bundles';
 import { cancelBuild, listTags, preflight, startBuild } from './services/build';
+import { installFromCatalog, listCatalog } from './services/catalog';
+import { getCatalogSettings, saveCatalogSettings } from './services/settings';
 import { fetchLatestGame, listAdapters, pickGameFile } from './services/games';
 import { allowedOutputs, runInject } from './services/inject';
 
@@ -75,6 +77,11 @@ function registerHandlers() {
     z.object({ bundleId: z.string(), gameId: z.string(), modIds: z.array(z.string()).max(500), outputPath: z.string() }),
     (req) => runInject(req, progress),
   );
+
+  handle('catalog:list', null, () => listCatalog());
+  handle('catalog:install', z.object({ id: z.string().max(100) }), ({ id }) => installFromCatalog(id, progress));
+  handle('catalog:getSettings', null, () => getCatalogSettings());
+  handle('catalog:saveSettings', z.object({ repo: z.string().max(200).optional(), token: z.string().max(500).nullable().optional() }), (patch) => saveCatalogSettings(patch));
 
   handle('build:preflight', null, () => preflight());
   handle('build:listTags', z.object({ repo: z.string().max(300) }), ({ repo }) => listTags(repo));

@@ -46,6 +46,35 @@ export interface ProgressEvent {
   fraction: number | null;
 }
 
+/** A published loader bundle that can be downloaded. */
+export interface CatalogEntry {
+  id: string;
+  kind: 'upstream' | 'fork';
+  version: string;
+  ref: string;
+  commit: string;
+  builtAt: string;
+  modCount: number;
+  bundleSize: number;
+  /** Pre-releases are forks or unreleased builds. */
+  prerelease: boolean;
+  /** Already installed on this machine. */
+  installed: boolean;
+}
+
+export interface CatalogList {
+  /** Where the list came from, e.g. `owner/repo`. */
+  source: string;
+  entries: CatalogEntry[];
+}
+
+export interface CatalogSettings {
+  /** `owner/repo` that publishes bundles. */
+  repo: string;
+  /** An access token is stored (it is never sent back to the UI). */
+  hasToken: boolean;
+}
+
 export interface ToolStatus {
   found: boolean;
   /** Version string as reported by the tool, when found. */
@@ -95,6 +124,15 @@ export interface Platform {
   };
   shell: {
     showInFolder(path: string): Promise<void>;
+  };
+  /** Downloading published loader bundles. Absent on hosts without a catalog. */
+  catalog?: {
+    list(): Promise<CatalogList>;
+    /** Downloads, verifies and installs a bundle. Progress arrives through onProgress. */
+    install(id: string): Promise<BundleInfo>;
+    getSettings(): Promise<CatalogSettings>;
+    /** `token: null` removes the stored token; leaving it out keeps it. */
+    saveSettings(patch: { repo?: string; token?: string | null }): Promise<CatalogSettings>;
   };
   /** Building a loader bundle from source. Absent on hosts that cannot run builds (the web app). */
   build?: {

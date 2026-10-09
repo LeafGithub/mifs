@@ -1,7 +1,7 @@
 import { defaultSelection, dependentsOf, resolveDependencies } from '@mifs/core';
 import { createContext, useContext } from 'react';
 import { createStore, useStore, type StoreApi } from 'zustand';
-import type { BundleInfo, GameAdapter, GameFile, InjectResult, Platform, Preflight, ProgressEvent } from './platform';
+import type { BundleInfo, CatalogList, CatalogSettings, GameAdapter, GameFile, InjectResult, Platform, Preflight, ProgressEvent } from './platform';
 import { UPSTREAM_REPO } from './lib/sources';
 
 export const STEPS = ['Loader', 'Game', 'Mods', 'Install'] as const;
@@ -46,7 +46,26 @@ const idleBuild: BuildState = {
   error: null,
 };
 
+export interface CatalogState {
+  list: CatalogList | null;
+  loading: boolean;
+  /** Why the list could not be loaded (shown as a quiet notice: it is expected while the repository is private). */
+  error: string | null;
+  /** A download or settings change that failed (shown as an alert). */
+  actionError: string | null;
+  /** Id of the bundle being downloaded. */
+  installing: string | null;
+  progress: ProgressEvent | null;
+  settings: CatalogSettings | null;
+  settingsOpen: boolean;
+}
+
+const idleCatalog: CatalogState = { list: null, loading: false, error: null, actionError: null, installing: null, progress: null, settings: null, settingsOpen: false };
+
 export interface AppState {
+  /** The host can download published bundles. */
+  canCatalog: boolean;
+  catalog: CatalogState;
   /** The host can build loader bundles from source. */
   canBuild: boolean;
   build: BuildState;
@@ -67,6 +86,10 @@ export interface AppState {
   error: string | null;
 
   init(): Promise<void>;
+  loadCatalog(): Promise<void>;
+  installFromCatalog(id: string): Promise<void>;
+  toggleCatalogSettings(): void;
+  saveCatalogSettings(patch: { repo?: string; token?: string | null }): Promise<void>;
   toggleBuild(): Promise<void>;
   recheckBuild(): Promise<void>;
   setBuild(patch: Partial<BuildState>): void;
@@ -101,13 +124,16 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
     platform.build?.onLog((lines) => set((s) => ({ build: { ...s.build, logs: [...s.build.logs, ...lines].slice(-400) } })));
 
     platform.onProgress((p) => {
-      if (p.kind === 'build') set((s) => (s.build.status === 'running' ? { build: { ...s.build, progress: p } } : s));
+      if (p.kind === 'download' && get().catalog.installing) set((s) => ({ catalog: { ...s.catalog, progress: p } }));
+      else if (p.kind === 'build') set((s) => (s.build.status === 'running' ? { build: { ...s.build, progress: p } } : s));
       else if (get().run.status === 'running') set((s) => ({ run: { ...s.run, progress: p } }));
       else if (get().gameBusy) set({ gameProgress: p });
     });
 
     return {
       canBuild: platform.build !== undefined,
+      canCatalog: platform.catalog !== undefined,
+      catalog: idleCatalog,
       build: idleBuild,
       step: 0,
       bundles: [],
@@ -128,8 +154,55 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
           const [bundles, adapters] = await Promise.all([platform.bundles.list(), platform.games.adapters()]);
           set({ bundles, adapters, bundlesLoaded: true });
           if (bundles.length === 1) get().selectBundle(bundles[0]!.id);
+          void get().loadCatalog();
         } catch (e) {
           set({ bundlesLoaded: true, error: message(e) });
+        }
+      },
+
+      async loadCatalog() {
+        const api = platform.catalog;
+        if (!api) return;
+        set((s) => ({ catalog: { ...s.catalog, loading: true, error: null } }));
+        const [list, settings] = await Promise.allSettled([api.list(), api.getSettings()]);
+        set((s) => ({
+          catalog: {
+            ...s.catalog,
+            loading: false,
+            list: list.status === 'fulfilled' ? list.value : null,
+            error: list.status === 'rejected' ? message(list.reason) : null,
+            settings: settings.status === 'fulfilled' ? settings.value : s.catalog.settings,
+          },
+        }));
+      },
+
+      async installFromCatalog(id) {
+        const api = platform.catalog;
+        if (!api || get().catalog.installing) return;
+        set((s) => ({ catalog: { ...s.catalog, installing: id, progress: null, actionError: null } }));
+        try {
+          const info = await api.install(id);
+          set((s) => ({
+            bundles: [...s.bundles.filter((b) => b.id !== info.id), info],
+            catalog: { ...s.catalog, installing: null, progress: null, list: s.catalog.list && { ...s.catalog.list, entries: s.catalog.list.entries.map((e) => (e.id === info.id ? { ...e, installed: true } : e)) } },
+          }));
+          get().selectBundle(info.id);
+        } catch (e) {
+          set((s) => ({ catalog: { ...s.catalog, installing: null, progress: null, actionError: message(e) } }));
+        }
+      },
+
+      toggleCatalogSettings: () => set((s) => ({ catalog: { ...s.catalog, settingsOpen: !s.catalog.settingsOpen } })),
+
+      async saveCatalogSettings(patch) {
+        const api = platform.catalog;
+        if (!api) return;
+        try {
+          const settings = await api.saveSettings(patch);
+          set((s) => ({ catalog: { ...s.catalog, settings, actionError: null } }));
+          await get().loadCatalog();
+        } catch (e) {
+          set((s) => ({ catalog: { ...s.catalog, actionError: message(e) } }));
         }
       },
 

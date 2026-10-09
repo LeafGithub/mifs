@@ -23,6 +23,12 @@ const api: Platform = {
   output: { pick: (suggestedName) => call('output:pick', { suggestedName }) },
   inject: { run: (request) => call('inject:run', request) },
   shell: { showInFolder: (path) => call('shell:showInFolder', { path }) },
+  catalog: {
+    list: () => call('catalog:list'),
+    install: (id) => call('catalog:install', { id }),
+    getSettings: () => call('catalog:getSettings'),
+    saveSettings: (patch) => call('catalog:saveSettings', patch),
+  },
   build: {
     preflight: () => call('build:preflight'),
     listTags: (repo) => call('build:listTags', { repo }),
