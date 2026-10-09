@@ -19,6 +19,18 @@ export function normalizeRef(ref: string): string {
   return r;
 }
 
+/** A build peaked at about 3.9 GB in measurements; keep a margin. */
+export const BUILD_NEEDS_BYTES = 5 * 1024 ** 3;
+
+const gb = (n: number) => `${(n / 1024 ** 3).toFixed(n >= 10 * 1024 ** 3 ? 0 : 1)} GB`;
+
+/** Free-space check shown next to git/node/corepack. `free === null` means the OS could not tell, which never blocks a build. */
+export function diskStatus(free: number | null, need = BUILD_NEEDS_BYTES): { found: boolean; version?: string; ok: boolean; hint?: string } {
+  if (free === null) return { found: true, version: 'unknown', ok: true };
+  if (free >= need) return { found: true, version: `${gb(free)} free`, ok: true };
+  return { found: true, version: `${gb(free)} free`, ok: false, hint: `A build needs about ${gb(need)} while it runs. Free up space on that drive and check again.` };
+}
+
 export const isUpstream = (repo: string): boolean => normalizeRepo(repo).toLowerCase() === UPSTREAM_REPO.toLowerCase();
 
 type Triple = [number, number, number];

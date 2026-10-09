@@ -55,6 +55,7 @@ export function BuildPanel() {
                 <Tool name="Git" t={b.preflight.git} />
                 <Tool name="Node.js 18+" t={b.preflight.node} />
                 <Tool name="Corepack" t={b.preflight.corepack} />
+                <Tool name="Free disk space" t={b.preflight.disk} />
               </ul>
             ) : (
               <p className="text-sm text-muted-foreground">Checking…</p>

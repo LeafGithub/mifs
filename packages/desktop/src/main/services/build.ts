@@ -3,12 +3,13 @@ import { app } from 'electron';
 import log from 'electron-log/main';
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { statfsSync } from 'node:fs';
+import { readdir, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { AppError } from '../ipc';
 import { buildsDir, logsDir } from '../paths';
 import { importBundleFrom } from './bundles';
-import { failureMessage, lineSplitter, nodeMajor, normalizeRef, normalizeRepo, parseMark, parseTags } from './build-utils';
+import { BUILD_NEEDS_BYTES, diskStatus, failureMessage, lineSplitter, nodeMajor, normalizeRef, normalizeRepo, parseMark, parseTags } from './build-utils';
 
 const MIN_NODE_MAJOR = 18;
 const isWin = process.platform === 'win32';
@@ -25,11 +26,25 @@ function tool(version: string | null, ok: (v: string) => boolean, hint: string):
   return ok(version) ? { found: true, version, ok: true } : { found: true, version, ok: false, hint };
 }
 
+/** Free bytes on the drive that holds the app's build folder, or null when the OS cannot tell. */
+function freeBytes(): number | null {
+  try {
+    const s = statfsSync(buildsDir());
+    return s.bavail * s.bsize;
+  } catch {
+    return null;
+  }
+}
+
+// Test seam, honored only by unpackaged builds: lets the e2e suite simulate a nearly full disk.
+const needBytes = () => (!app.isPackaged && Number(process.env.MIFS_MIN_FREE_BYTES)) || BUILD_NEEDS_BYTES;
+
 export function preflight(): Preflight {
   const git = tool(probe('git', ['--version'])?.replace(/^git version\s*/, '') ?? null, () => true, 'Install Git from https://git-scm.com/downloads');
   const node = tool(probe('node', ['--version']), (v) => (nodeMajor(v) ?? 0) >= MIN_NODE_MAJOR, `Install Node.js ${MIN_NODE_MAJOR} or newer from https://nodejs.org`);
   const corepack = tool(probe('corepack', ['--version']), () => true, 'Corepack comes with Node.js; reinstall Node.js, or run "npm i -g corepack"');
-  return { git, node, corepack, ok: git.ok && node.ok && corepack.ok };
+  const disk = diskStatus(freeBytes(), needBytes());
+  return { git, node, corepack, disk, ok: git.ok && node.ok && corepack.ok && disk.ok };
 }
 
 export async function listTags(repo: string): Promise<string[]> {
@@ -88,7 +103,7 @@ export async function startBuild(
   }
   const pre = preflight();
   if (!pre.ok) {
-    const missing = Object.entries({ Git: pre.git, 'Node.js': pre.node, Corepack: pre.corepack }).filter(([, t]) => !t.ok);
+    const missing = Object.entries({ Git: pre.git, 'Node.js': pre.node, Corepack: pre.corepack, 'Free disk space': pre.disk }).filter(([, t]) => !t.ok);
     throw new AppError('PREREQ', `Missing tools: ${missing.map(([n, t]) => `${n} (${t.hint})`).join('; ')}`);
   }
 
@@ -147,4 +162,20 @@ export async function startBuild(
     // The clone with its node_modules is large; the finished bundle was already copied out.
     await rm(work, { recursive: true, force: true, maxRetries: 3 }).catch((e) => log.warn('could not clean build folder', e));
   }
+}
+
+/**
+ * Removes build folders left behind by a run that was killed mid-build (the normal path cleans up after itself).
+ * Safe at startup: the app is single-instance and builds only exist while one is running.
+ */
+export async function sweepStaleBuilds(): Promise<number> {
+  const dir = buildsDir();
+  let removed = 0;
+  for (const name of await readdir(dir).catch(() => [])) {
+    await rm(join(dir, name), { recursive: true, force: true, maxRetries: 3 })
+      .then(() => removed++)
+      .catch((e) => log.warn(`could not remove stale build folder ${name}`, e));
+  }
+  if (removed) log.info(`removed ${removed} stale build folder(s)`);
+  return removed;
 }

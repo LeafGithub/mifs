@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { handle } from './ipc';
 import { importBundleFolder, listBundles, removeBundle } from './services/bundles';
-import { cancelBuild, listTags, preflight, startBuild } from './services/build';
+import { cancelBuild, listTags, preflight, startBuild, sweepStaleBuilds } from './services/build';
 import { installFromCatalog, listCatalog } from './services/catalog';
 import { getCatalogSettings, saveCatalogSettings } from './services/settings';
 import { fetchLatestGame, listAdapters, pickGameFile } from './services/games';
@@ -103,6 +103,7 @@ if (!app.requestSingleInstanceLock()) {
   void app.whenReady().then(() => {
     registerHandlers();
     createWindow();
+    void sweepStaleBuilds(); // leftovers from a run that was killed mid-build
     app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && createWindow());
   });
   app.on('window-all-closed', () => app.quit());

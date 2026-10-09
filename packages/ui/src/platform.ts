@@ -90,6 +90,8 @@ export interface Preflight {
   git: ToolStatus;
   node: ToolStatus;
   corepack: ToolStatus;
+  /** Free space where builds are made (a build needs several GB while it runs). */
+  disk: ToolStatus;
   ok: boolean;
 }
 

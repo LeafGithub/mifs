@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UPSTREAM_REPO, failureMessage, isUpstream, lineSplitter, nodeMajor, normalizeRef, normalizeRepo, parseMark, parseTags } from './build-utils';
+import { BUILD_NEEDS_BYTES, diskStatus, UPSTREAM_REPO, failureMessage, isUpstream, lineSplitter, nodeMajor, normalizeRef, normalizeRepo, parseMark, parseTags } from './build-utils';
 
 describe('normalizeRepo', () => {
   it('accepts GitHub https URLs and adds .git', () => {
@@ -93,5 +93,26 @@ describe('lineSplitter', () => {
     s.push('o\r\nthree');
     s.end();
     expect(lines).toEqual(['one', 'two', 'three']);
+  });
+});
+
+describe('diskStatus', () => {
+  const GB = 1024 ** 3;
+
+  it('passes when there is room for a build and says how much is free', () => {
+    expect(diskStatus(108 * GB)).toEqual({ found: true, version: '108 GB free', ok: true });
+    expect(diskStatus(BUILD_NEEDS_BYTES).ok).toBe(true); // exactly enough is enough
+  });
+
+  it('fails with advice when space is short', () => {
+    const s = diskStatus(2.5 * GB);
+    expect(s.ok).toBe(false);
+    expect(s.version).toBe('2.5 GB free');
+    expect(s.hint).toMatch(/needs about 5\.0 GB/);
+    expect(diskStatus(BUILD_NEEDS_BYTES - 1).ok).toBe(false);
+  });
+
+  it('never blocks when the OS cannot report free space', () => {
+    expect(diskStatus(null)).toEqual({ found: true, version: 'unknown', ok: true });
   });
 });

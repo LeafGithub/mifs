@@ -2,7 +2,7 @@
 // user's clicks in them would return; everything else (IPC, services, worker thread) is the production code path.
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -172,6 +172,30 @@ test.describe('build from source', () => {
     await expect(page.getByText('Building mod X (3/23)')).toBeVisible();
     await page.getByRole('button', { name: 'Cancel build' }).click();
     await expect(page.getByRole('alert')).toContainText('cancelled');
+  });
+
+  test('a nearly full disk blocks the build with a clear reason', async () => {
+    const page = await launch({ ...fake, MIFS_MIN_FREE_BYTES: String(10 ** 15) }); // pretend a build needs a petabyte
+    await page.getByRole('button', { name: /Build from source/ }).click();
+    await expect(page.getByText('Free disk space')).toBeVisible();
+    await expect(page.getByText(/Free up space on that drive/)).toBeVisible();
+    await page.getByLabel('The newest official code (master)').check();
+    await expect(page.getByRole('button', { name: 'Build', exact: true })).toBeDisabled();
+  });
+
+  test('shows the free space when there is enough', async () => {
+    const page = await launch(fake);
+    await page.getByRole('button', { name: /Build from source/ }).click();
+    await expect(page.getByText(/\d+(\.\d)? GB free/)).toBeVisible();
+  });
+
+  test('removes build folders left behind by a killed run when the app starts', async () => {
+    const stale = join(tmp, `userdata-${launches + 1}`, 'builds', '2026-01-01T00-00-00-000Z');
+    mkdirSync(join(stale, 'work', 'src', 'node_modules'), { recursive: true });
+    writeFileSync(join(stale, 'work', 'src', 'node_modules', 'big.bin'), 'x');
+    await launch(fake);
+    await expect.poll(() => existsSync(stale), { timeout: 10_000 }).toBe(false);
+    expect(existsSync(join(tmp, `userdata-${launches}`, 'builds'))).toBe(true); // the folder itself stays
   });
 
   test('requires explicit trust before building a custom repository, and rejects bad addresses', async () => {

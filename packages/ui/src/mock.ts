@@ -122,6 +122,7 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
         git: { found: true, version: '2.55.0', ok: true },
         node: { found: true, version: 'v24.15.0', ok: true },
         corepack: { found: true, version: '0.34.6', ok: true },
+        disk: { found: true, version: '108 GB free', ok: true },
         ok: true,
       }),
       listTags: async () => ['2.101.1', '2.100.1', '2.61.0'],
