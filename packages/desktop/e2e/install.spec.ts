@@ -160,7 +160,7 @@ test.describe('build from source', () => {
 // Catalog: a fake private GitHub (the catalog and its assets 404 without the right token), serving a real built bundle.
 const TOKEN = 'test-token-123';
 
-function startFakeGitHub(opts: { badHash?: boolean } = {}): Promise<{ server: Server; base: string; requests: string[] }> {
+function startFakeGitHub(opts: { badHash?: boolean; slowUnauthorized?: boolean } = {}): Promise<{ server: Server; base: string; requests: string[] }> {
   const manifest = JSON.parse(readFileSync(join(BUNDLE, 'manifest.json'), 'utf8'));
   const zip = readFileSync(join(BUNDLE, readdirSync(BUNDLE).find((f) => /^modloader-bundle-.*\.zip$/.test(f))!));
   const sha = opts.badHash ? '0'.repeat(64) : createHash('sha256').update(zip).digest('hex');
@@ -179,7 +179,12 @@ function startFakeGitHub(opts: { badHash?: boolean } = {}): Promise<{ server: Se
   const server = createServer((req, res) => {
     requests.push(`${req.method} ${req.url} auth=${req.headers.authorization ? 'yes' : 'no'}`);
     const send = (code: number, body: string | Buffer, type = 'application/json') => (res.writeHead(code, { 'content-type': type, 'content-length': Buffer.byteLength(body) }), res.end(body));
-    if (req.headers.authorization !== `Bearer ${TOKEN}`) return send(404, '{"message":"Not Found"}'); // what GitHub says about private repos
+    if (req.headers.authorization !== `Bearer ${TOKEN}`) {
+      // what GitHub says about private repos (optionally slowly, to make the startup load finish after a token is saved)
+      if (opts.slowUnauthorized) setTimeout(() => send(404, '{"message":"Not Found"}'), 1500);
+      else send(404, '{"message":"Not Found"}');
+      return;
+    }
     if (req.url === '/repos/o/r/releases/tags/catalog') return send(200, JSON.stringify({ assets: [{ id: 99, name: 'catalog.json' }] }));
     if (req.url === '/repos/o/r/releases/assets/99') return send(200, JSON.stringify(catalog));
     if (req.url === '/repos/o/r/releases/assets/2') return send(200, zip, 'application/octet-stream');
@@ -224,6 +229,16 @@ test.describe('bundle catalog', () => {
     expect(readFileSync(join(dataDir, 'settings.json'), 'utf8')).not.toContain(TOKEN);
     expect(readdirSync(join(dataDir, 'bundles')).length).toBe(1);
     expect(readdirSync(join(dataDir, 'builds')).length).toBe(0); // scratch space cleaned up
+  });
+
+  test('a slow startup load cannot overwrite the list loaded after saving a token', async () => {
+    gh = await startFakeGitHub({ slowUnauthorized: true });
+    const page = await launch({ MIFS_API_BASE: gh.base });
+    await configure(page, TOKEN); // saved while the first, unauthorized load is still in flight
+    await expect(page.getByRole('list', { name: 'Available bundles' })).toContainText(/ModLoader 2\.\d+\.\d+/);
+    await page.waitForTimeout(2500); // the stale 404 arrives now and must be ignored
+    await expect(page.getByRole('list', { name: 'Available bundles' })).toContainText(/ModLoader 2\.\d+\.\d+/);
+    await expect(page.getByText(/catalog was not found/)).toHaveCount(0);
   });
 
   test('refuses a bundle whose checksum does not match the catalog', async () => {

@@ -1,5 +1,5 @@
 import { CircleAlert, Cloud, Download, Info, KeyRound, LoaderCircle, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -93,18 +93,31 @@ function CatalogSettingsForm() {
   const save = useApp((s) => s.saveCatalogSettings);
   const [repo, setRepo] = useState(settings?.repo ?? '');
   const [token, setToken] = useState('');
+  // The stored settings may arrive after the form is opened; follow them until the user has typed something else.
+  const [touched, setTouched] = useState(false);
+  useEffect(() => {
+    if (!touched) setRepo(settings?.repo ?? '');
+  }, [settings?.repo, touched]);
 
   return (
     <form
       className="flex flex-col gap-3 rounded-md bg-muted/40 p-3"
       onSubmit={(e) => {
         e.preventDefault();
-        void save({ repo, ...(token ? { token } : {}) }).then(() => setToken(''));
+        const repoChanged = repo.trim() !== '' && repo.trim() !== settings?.repo;
+        void save({ ...(repoChanged ? { repo } : {}), ...(token ? { token } : {}) }).then(() => {
+          setToken('');
+          setTouched(false);
+        });
       }}
     >
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         Bundle repository
-        <input value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="owner/repo" className="h-8 rounded-md border bg-background px-2 text-sm text-foreground" />
+        <input value={repo} onChange={(e) => {
+            setRepo(e.target.value);
+            setTouched(true);
+          }}
+          placeholder="owner/repo" className="h-8 rounded-md border bg-background px-2 text-sm text-foreground" />
       </label>
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         Access token {settings?.hasToken && <span className="text-success">(saved)</span>}

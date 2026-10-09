@@ -121,6 +121,10 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
   const store = createStore<AppState>((set, get) => {
     const currentManifest = () => get().bundles.find((b) => b.id === get().bundleId)?.manifest ?? null;
 
+    // Only the newest catalog load may update the state: an older, slower one (say, started before a token was saved)
+    // must not overwrite its result.
+    let catalogSeq = 0;
+
     platform.build?.onLog((lines) => set((s) => ({ build: { ...s.build, logs: [...s.build.logs, ...lines].slice(-400) } })));
 
     platform.onProgress((p) => {
@@ -163,8 +167,10 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
       async loadCatalog() {
         const api = platform.catalog;
         if (!api) return;
+        const seq = ++catalogSeq;
         set((s) => ({ catalog: { ...s.catalog, loading: true, error: null } }));
         const [list, settings] = await Promise.allSettled([api.list(), api.getSettings()]);
+        if (seq !== catalogSeq) return;
         set((s) => ({
           catalog: {
             ...s.catalog,
