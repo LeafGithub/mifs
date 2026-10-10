@@ -16,9 +16,10 @@ export function CatalogPanel() {
   const install = useApp((s) => s.installFromCatalog);
   const toggleSettings = useApp((s) => s.toggleCatalogSettings);
 
-  const available = c.list?.entries.filter((e) => !e.installed) ?? [];
-  // The newest official (non-pre-release) bundle is the one to recommend.
-  const recommended = available.find((e) => e.kind === 'upstream' && !e.prerelease)?.id;
+  // New bundles, plus installed ones that were republished with a newer build.
+  const available = c.list?.entries.filter((e) => !e.installed || e.updateAvailable) ?? [];
+  // The newest official (non-pre-release) bundle you do not have yet is the one to recommend.
+  const recommended = available.find((e) => e.kind === 'upstream' && !e.prerelease && !e.installed)?.id;
 
   return (
     <Card className="flex flex-col gap-3 p-4">
@@ -71,6 +72,7 @@ export function CatalogPanel() {
                   <KindLabel kind={e.kind === 'fork' ? 'fork' : 'upstream'} />
                 </Badge>
                 {e.id === recommended && <Badge variant="selected">recommended</Badge>}
+                {e.updateAvailable && <Badge variant="warning">update available</Badge>}
               </span>
               <span className="text-xs text-muted-foreground">
                 {e.modCount} mods · {formatBytes(e.bundleSize)} download · built {formatDate(e.builtAt)}
@@ -82,8 +84,8 @@ export function CatalogPanel() {
                 <span className="truncate text-xs text-muted-foreground">{c.progress?.label ?? 'Starting…'}</span>
               </div>
             ) : (
-              <Button variant={e.id === recommended ? 'default' : 'secondary'} size="sm" disabled={c.installing !== null} onClick={() => install(e.id)}>
-                <Download /> Download
+              <Button variant={e.id === recommended || e.updateAvailable ? 'default' : 'secondary'} size="sm" disabled={c.installing !== null} onClick={() => install(e.id)}>
+                <Download /> {e.updateAvailable ? 'Update' : 'Download'}
               </Button>
             )}
           </li>

@@ -1,4 +1,4 @@
-import { verifySha256 } from '@mifs/core';
+import { bundleFingerprint, verifySha256 } from '@mifs/core';
 import type { BundleInfo, CatalogList, ProgressEvent } from '@mifs/ui/platform';
 import { app } from 'electron';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { AppError } from '../ipc';
 import { buildsDir } from '../paths';
 import { importBundleFrom, listBundles } from './bundles';
-import { explainHttpError, extractBundleZip, parseCatalog, type RawCatalogEntry } from './catalog-utils';
+import { explainHttpError, extractBundleZip, isUpdate, parseCatalog, type RawCatalogEntry } from './catalog-utils';
 import { getCatalogRepo, getToken } from './settings';
 
 // Test seam, honored only by unpackaged builds: lets the e2e suite talk to a fake GitHub.
@@ -47,11 +47,15 @@ async function fetchEntries(repo: string, token: string | null): Promise<RawCata
 export async function listCatalog(): Promise<CatalogList> {
   const repo = await getCatalogRepo();
   const entries = await fetchEntries(repo, await getToken());
-  const installed = new Set((await listBundles()).map((b) => b.id));
+  const installed = new Map(await Promise.all((await listBundles()).map(async (b) => [b.id, { builtAt: b.manifest.loader.builtAt, fingerprint: await bundleFingerprint(b.manifest) }] as const)));
   return {
     source: repo,
     entries: entries
-      .map(({ bundleAssetId: _a, manifestAssetId: _m, bundleSha256: _s, ...e }) => ({ ...e, installed: installed.has(e.id) }))
+      .map(({ bundleAssetId: _a, manifestAssetId: _m, bundleSha256: _s, fingerprint, ...e }) => ({
+        ...e,
+        installed: installed.has(e.id),
+        updateAvailable: isUpdate({ installedBuiltAt: installed.get(e.id)?.builtAt, catalogBuiltAt: e.builtAt, installedFingerprint: installed.get(e.id)?.fingerprint, catalogFingerprint: fingerprint }),
+      }))
       .sort((a, b) => b.builtAt.localeCompare(a.builtAt)),
   };
 }

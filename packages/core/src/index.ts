@@ -17,3 +17,4 @@ export function buildModHtml(html: string, options: BuildOptions): InjectResult 
 export { ManifestError, parseManifest, type BundleManifest, type DepRange, type FileRef, type ModEntry } from './manifest.ts';
 export { sha256Hex, verifySha256 } from './hash.ts';
 export { defaultSelection, dependentsOf, resolveDependencies, type Resolution } from './selection.ts';
+export { bundleFingerprint, canonicalContent } from './fingerprint.ts';

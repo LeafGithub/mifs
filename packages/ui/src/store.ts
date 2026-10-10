@@ -190,7 +190,7 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
           const info = await api.install(id);
           set((s) => ({
             bundles: [...s.bundles.filter((b) => b.id !== info.id), info],
-            catalog: { ...s.catalog, installing: null, progress: null, list: s.catalog.list && { ...s.catalog.list, entries: s.catalog.list.entries.map((e) => (e.id === info.id ? { ...e, installed: true } : e)) } },
+            catalog: { ...s.catalog, installing: null, progress: null, list: s.catalog.list && { ...s.catalog.list, entries: s.catalog.list.entries.map((e) => (e.id === info.id ? { ...e, installed: true, updateAvailable: false } : e)) } },
           }));
           get().selectBundle(info.id);
         } catch (e) {

@@ -45,6 +45,7 @@ export const MOCK_ADAPTERS: GameAdapter[] = [
 ];
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const CATALOG_BUILT_AT = '2026-10-10T11:03:00Z';
 
 /** In-memory Platform: lets the UI run in a plain browser and keeps it testable without Electron. */
 export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: number } = {}): Platform {
@@ -94,11 +95,16 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
     catalog: {
       list: async () => {
         await wait(delay / 2);
-        const installed = new Set(bundles.map((b) => b.id));
-        const entry = (id: string, version: string, kind: 'upstream' | 'fork', builtAt: string) => ({ id, kind, version, ref: version, commit: 'abcdef0', builtAt, modCount: 23, bundleSize: 8_230_356, prerelease: kind === 'fork', installed: installed.has(id) });
+        const installedBuiltAt = new Map(bundles.map((b) => [b.id, b.manifest.loader.builtAt]));
+        const entry = (id: string, version: string, kind: 'upstream' | 'fork', builtAt: string) => ({
+          id, kind, version, ref: version, commit: 'abcdef0', builtAt, modCount: 23, bundleSize: 8_230_356, prerelease: kind === 'fork',
+          installed: installedBuiltAt.has(id),
+          updateAvailable: (installedBuiltAt.get(id) ?? builtAt) < builtAt, // ISO dates compare as strings
+        });
         return {
           source: 'LeafGithub/mifs',
-          entries: [entry('upstream-2.101.1-17c16d9', '2.101.1', 'upstream', '2026-10-09T16:00:00Z'), entry('maplebirchleaf-2.102.0-aae1d5d', '2.102.0', 'fork', '2026-10-08T12:00:00Z')],
+          // The demo bundle was built earlier than the catalog's copy of the same id, so it shows as updatable.
+          entries: [entry('upstream-2.101.1-17c16d9', '2.101.1', 'upstream', CATALOG_BUILT_AT), entry('maplebirchleaf-2.102.0-aae1d5d', '2.102.0', 'fork', '2026-10-08T12:00:00Z')],
         };
       },
       install: async (id) => {
@@ -106,7 +112,8 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
           emit({ kind: 'download', label: `Downloading… ${i * 25}%`, fraction: i / 4 });
           await wait(delay / 2);
         }
-        const info = { ...MOCK_BUNDLE, id };
+        const builtAt = id === 'upstream-2.101.1-17c16d9' ? CATALOG_BUILT_AT : MOCK_BUNDLE.manifest.loader.builtAt;
+        const info = { ...MOCK_BUNDLE, id, manifest: { ...MOCK_BUNDLE.manifest, id, loader: { ...MOCK_BUNDLE.manifest.loader, builtAt } } };
         bundles = [...bundles.filter((b) => b.id !== id), info];
         return info;
       },

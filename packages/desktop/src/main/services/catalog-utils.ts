@@ -15,6 +15,8 @@ export interface RawCatalogEntry {
   manifestAssetId: number;
   /** sha256 of the bundle zip as recorded by GitHub when the asset was uploaded. */
   bundleSha256?: string;
+  /** What the bundle contains (see bundleFingerprint); absent in catalogs written before it existed. */
+  fingerprint?: string;
 }
 
 const REPO_RE = /^([A-Za-z0-9][A-Za-z0-9._-]{0,99})\/([A-Za-z0-9][A-Za-z0-9._-]{0,99})$/;
@@ -42,6 +44,7 @@ export function parseCatalog(json: unknown): RawCatalogEntry[] {
       int(b.modCount) && int(b.bundleSize) && int(b.bundleAssetId) && int(b.manifestAssetId);
     if (!ok) continue;
     const sha = typeof b.bundleSha256 === 'string' && /^[0-9a-f]{64}$/.test(b.bundleSha256) ? b.bundleSha256 : undefined;
+    const fingerprint = typeof b.fingerprint === 'string' && /^[0-9a-f]{64}$/.test(b.fingerprint) ? b.fingerprint : undefined;
     out.push({
       id: b.id as string,
       kind: b.kind as 'upstream' | 'fork',
@@ -55,6 +58,7 @@ export function parseCatalog(json: unknown): RawCatalogEntry[] {
       bundleAssetId: b.bundleAssetId as number,
       manifestAssetId: b.manifestAssetId as number,
       ...(sha ? { bundleSha256: sha } : {}),
+      ...(fingerprint ? { fingerprint } : {}),
     });
   }
   return out;
@@ -82,6 +86,27 @@ export function extractBundleZip(zip: Uint8Array): Map<string, Uint8Array> {
     },
   });
   return new Map(Object.entries(files));
+}
+
+/**
+ * True when the catalog's build is newer than the installed one. A republished bundle keeps its id (same loader version
+ * and commit) but gets a new `builtAt`, so that timestamp is what tells an update apart. Unreadable dates never count.
+ */
+export function isNewerBuild(installedBuiltAt: string | undefined, catalogBuiltAt: string): boolean {
+  if (!installedBuiltAt) return false;
+  const installed = Date.parse(installedBuiltAt);
+  const catalog = Date.parse(catalogBuiltAt);
+  return Number.isFinite(installed) && Number.isFinite(catalog) && catalog > installed;
+}
+
+/**
+ * Whether the catalog's copy is an update for an installed bundle: it must be a newer build, and not the same content.
+ * The same content under a newer date is what a local build versus the CI build looks like, which is not worth a prompt.
+ * When either fingerprint is missing (older catalogs or installs), the date alone decides.
+ */
+export function isUpdate(i: { installedBuiltAt?: string; catalogBuiltAt: string; installedFingerprint?: string; catalogFingerprint?: string }): boolean {
+  if (!isNewerBuild(i.installedBuiltAt, i.catalogBuiltAt)) return false;
+  return !(i.installedFingerprint && i.catalogFingerprint && i.installedFingerprint === i.catalogFingerprint);
 }
 
 /** Maps a GitHub API failure to something a person can act on. */

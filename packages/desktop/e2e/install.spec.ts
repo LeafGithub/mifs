@@ -3,6 +3,7 @@
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { unzipSync, zipSync } from 'fflate';
 import { createServer, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -214,21 +215,47 @@ test.describe('build from source', () => {
 // Catalog: a fake private GitHub (the catalog and its assets 404 without the right token), serving a real built bundle.
 const TOKEN = 'test-token-123';
 
-function startFakeGitHub(opts: { badHash?: boolean; slowUnauthorized?: boolean } = {}): Promise<{ server: Server; base: string; requests: string[] }> {
-  const manifest = JSON.parse(readFileSync(join(BUNDLE, 'manifest.json'), 'utf8'));
-  const zip = readFileSync(join(BUNDLE, readdirSync(BUNDLE).find((f) => /^modloader-bundle-.*\.zip$/.test(f))!));
-  const sha = opts.badHash ? '0'.repeat(64) : createHash('sha256').update(zip).digest('hex');
-  const catalog = {
+type Manifest = { id: string; kind: string; loader: { version: string; ref: string; commit: string; builtAt: string }; mods: { id: string; version: string; commit?: string; path: string }[]; licenses: string[] };
+
+/** Same text as canonicalContent in bundle/scripts/fingerprint.mjs (that file and the core library are tested against each other). */
+const fingerprint = (m: Manifest): string =>
+  createHash('sha256')
+    .update([m.loader.version, m.loader.commit, ...m.mods.map((x) => `${x.id}@${x.version}@${x.commit ?? ''}`).sort()].join('\n'))
+    .digest('hex');
+
+/** The same bundle republished: a new builtAt inside its manifest and, optionally, one mod removed (different content). */
+function republished(zip: Buffer, builtAt: string, dropModId?: string): { zip: Buffer; manifest: Manifest } {
+  const files = unzipSync(new Uint8Array(zip));
+  const manifest: Manifest = JSON.parse(new TextDecoder().decode(files['manifest.json']));
+  manifest.loader.builtAt = builtAt;
+  if (dropModId) {
+    const gone = manifest.mods.find((m) => m.id === dropModId)!;
+    manifest.mods = manifest.mods.filter((m) => m.id !== dropModId);
+    delete files[gone.path];
+    delete files[`licenses/mods/${dropModId}.LICENSE`];
+    manifest.licenses = manifest.licenses.filter((l) => l !== `licenses/mods/${dropModId}.LICENSE`);
+  }
+  files['manifest.json'] = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+  return { zip: Buffer.from(zipSync(files)), manifest };
+}
+
+function startFakeGitHub(opts: { badHash?: boolean; slowUnauthorized?: boolean } = {}): Promise<{ server: Server; base: string; requests: string[]; republish(builtAt: string, dropModId?: string): void }> {
+  const original: Manifest = JSON.parse(readFileSync(join(BUNDLE, 'manifest.json'), 'utf8'));
+  const originalZip = readFileSync(join(BUNDLE, readdirSync(BUNDLE).find((f) => /^modloader-bundle-.*\.zip$/.test(f))!));
+  // what the catalog currently publishes; republish() changes it, like a new CI run replacing the release assets
+  const state: { zip: Buffer; manifest: Manifest } = { zip: originalZip, manifest: original };
+  const catalog = () => ({
     schema: 1,
     generatedAt: new Date().toISOString(),
     bundles: [
       {
-        id: manifest.id, kind: manifest.kind, version: manifest.loader.version, ref: manifest.loader.ref, commit: manifest.loader.commit,
-        builtAt: manifest.loader.builtAt, modCount: manifest.mods.length, manifestAssetId: 1, bundleAssetId: 2, bundleSha256: sha,
-        manifestUrl: 'https://example.invalid/m', bundleUrl: 'https://example.invalid/b', bundleSize: zip.length, prerelease: false,
+        id: state.manifest.id, kind: state.manifest.kind, version: state.manifest.loader.version, ref: state.manifest.loader.ref, commit: state.manifest.loader.commit,
+        builtAt: state.manifest.loader.builtAt, modCount: state.manifest.mods.length, manifestAssetId: 1, bundleAssetId: 2,
+        bundleSha256: opts.badHash ? '0'.repeat(64) : createHash('sha256').update(state.zip).digest('hex'), fingerprint: fingerprint(state.manifest),
+        manifestUrl: 'https://example.invalid/m', bundleUrl: 'https://example.invalid/b', bundleSize: state.zip.length, prerelease: false,
       },
     ],
-  };
+  });
   const requests: string[] = [];
   const server = createServer((req, res) => {
     requests.push(`${req.method} ${req.url} auth=${req.headers.authorization ? 'yes' : 'no'}`);
@@ -240,11 +267,12 @@ function startFakeGitHub(opts: { badHash?: boolean; slowUnauthorized?: boolean }
       return;
     }
     if (req.url === '/repos/o/r/releases/tags/catalog') return send(200, JSON.stringify({ assets: [{ id: 99, name: 'catalog.json' }] }));
-    if (req.url === '/repos/o/r/releases/assets/99') return send(200, JSON.stringify(catalog));
-    if (req.url === '/repos/o/r/releases/assets/2') return send(200, zip, 'application/octet-stream');
+    if (req.url === '/repos/o/r/releases/assets/99') return send(200, JSON.stringify(catalog()));
+    if (req.url === '/repos/o/r/releases/assets/2') return send(200, state.zip, 'application/octet-stream');
     return send(404, '{}');
   });
-  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve({ server, base: `http://127.0.0.1:${(server.address() as { port: number }).port}`, requests })));
+  const republish = (builtAt: string, dropModId?: string) => Object.assign(state, republished(originalZip, builtAt, dropModId));
+  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve({ server, base: `http://127.0.0.1:${(server.address() as { port: number }).port}`, requests, republish })));
 }
 
 test.describe('bundle catalog', () => {
@@ -293,6 +321,60 @@ test.describe('bundle catalog', () => {
     await page.waitForTimeout(2500); // the stale 404 arrives now and must be ignored
     await expect(page.getByRole('list', { name: 'Available bundles' })).toContainText(/ModLoader 2\.\d+\.\d+/);
     await expect(page.getByText(/catalog was not found/)).toHaveCount(0);
+  });
+
+  test('offers an update when the catalog republishes an installed bundle, and applies it', async () => {
+    gh = await startFakeGitHub();
+    const page = await launch({ MIFS_API_BASE: gh.base });
+    await configure(page, TOKEN);
+    await page.getByRole('button', { name: 'Download' }).click();
+    await expect(page.getByText('selected', { exact: true })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText('You have every published bundle.')).toBeVisible();
+    await expect(page.getByText('update available')).toHaveCount(0); // same build: nothing to update
+
+    const dataDir = join(tmp, `userdata-${launches}`);
+    const bundleDir = join(dataDir, 'bundles', readdirSync(join(dataDir, 'bundles'))[0]!);
+    const builtAt = (): string => JSON.parse(readFileSync(join(bundleDir, 'manifest.json'), 'utf8')).loader.builtAt;
+    const before = builtAt();
+
+    const later = new Date(Date.parse(before) + 3_600_000).toISOString();
+    gh.republish(later, 'DoLLinkButtonFilter'); // newer build with different content
+    await page.getByRole('button', { name: 'Refresh the list' }).click();
+    await expect(page.getByRole('list', { name: 'Available bundles' }).getByText('update available')).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Loader bundles' }).getByText('update available')).toBeVisible(); // also on the installed card
+    expect(builtAt()).toBe(before); // nothing changes until the user asks
+
+    await page.getByRole('button', { name: 'Update', exact: true }).click();
+    await expect(page.getByText('You have every published bundle.')).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText('update available')).toHaveCount(0);
+    expect(builtAt()).toBe(later); // the installed copy was replaced
+    expect(readdirSync(join(dataDir, 'bundles')).length).toBe(1);
+    const mods = (): number => JSON.parse(readFileSync(join(bundleDir, 'manifest.json'), 'utf8')).mods.length;
+    expect(mods()).toBe(JSON.parse(readFileSync(join(BUNDLE, 'manifest.json'), 'utf8')).mods.length - 1); // the dropped mod is gone from the installed copy
+  });
+
+  test('does not offer an update for the same content built at a later time (a local build versus the CI one)', async () => {
+    gh = await startFakeGitHub();
+    const page = await launch({ MIFS_API_BASE: gh.base });
+    await configure(page, TOKEN);
+    await page.getByRole('button', { name: 'Download' }).click();
+    await expect(page.getByText('selected', { exact: true })).toBeVisible({ timeout: 60_000 });
+    gh.republish(new Date(Date.now() + 86_400_000).toISOString()); // later date, identical mods
+    await page.getByRole('button', { name: 'Refresh the list' }).click();
+    await expect(page.getByText('You have every published bundle.')).toBeVisible();
+    await expect(page.getByText('update available')).toHaveCount(0);
+  });
+
+  test('does not offer an update when the catalog copy is older', async () => {
+    gh = await startFakeGitHub();
+    const page = await launch({ MIFS_API_BASE: gh.base });
+    await configure(page, TOKEN);
+    await page.getByRole('button', { name: 'Download' }).click();
+    await expect(page.getByText('selected', { exact: true })).toBeVisible({ timeout: 60_000 });
+    gh.republish(new Date(0).toISOString()); // an older build than the installed one
+    await page.getByRole('button', { name: 'Refresh the list' }).click();
+    await expect(page.getByText('You have every published bundle.')).toBeVisible();
+    await expect(page.getByText('update available')).toHaveCount(0);
   });
 
   test('refuses a bundle whose checksum does not match the catalog', async () => {

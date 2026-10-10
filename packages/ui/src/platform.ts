@@ -60,6 +60,8 @@ export interface CatalogEntry {
   prerelease: boolean;
   /** Already installed on this machine. */
   installed: boolean;
+  /** Installed, but the catalog has a newer build under the same id (a republished bundle). */
+  updateAvailable: boolean;
 }
 
 export interface CatalogList {

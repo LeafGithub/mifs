@@ -3,6 +3,7 @@
 //
 // Each bundle release has the tag "loader-<bundle id>" and a small manifest.json asset that is read for the entry.
 import { spawnSync } from 'node:child_process';
+import { bundleFingerprint } from './fingerprint.mjs';
 
 const repo = process.argv[2];
 if (!repo) throw new Error('usage: make-catalog <owner/repo>');
@@ -29,6 +30,8 @@ for (const rel of releases) {
     commit: m.loader.commit,
     builtAt: m.loader.builtAt,
     modCount: m.mods.length,
+    // what the bundle contains; lets clients tell a republished bundle from a rebuild of the same content
+    fingerprint: bundleFingerprint(m),
     // Public repos can use the browser URLs; private ones need the API asset ids (plus a token).
     manifestAssetId: manifestAsset.id,
     bundleAssetId: zipAsset.id,

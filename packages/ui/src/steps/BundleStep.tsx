@@ -35,6 +35,9 @@ export function BundleStep() {
   const remove = useApp((s) => s.removeBundle);
   const canBuild = useApp((s) => s.canBuild);
   const canCatalog = useApp((s) => s.canCatalog);
+  const catalogEntries = useApp((s) => s.catalog.list?.entries);
+  const installing = useApp((s) => s.catalog.installing);
+  const update = useApp((s) => s.installFromCatalog);
 
   // The newest official bundle is the one to suggest: most people should not have to weigh versions or forks.
   const recommendedId = bundles
@@ -57,6 +60,7 @@ export function BundleStep() {
         {bundles.map((b) => {
           const active = b.id === bundleId;
           const fork = b.manifest.kind === 'fork';
+          const hasUpdate = catalogEntries?.some((e) => e.id === b.id && e.updateAvailable) ?? false;
           const size = b.manifest.mods.reduce((n, m) => n + m.size, b.manifest.beforeSC2.size);
           return (
             <li key={b.id}>
@@ -75,6 +79,7 @@ export function BundleStep() {
                     </Badge>
                     {b.id === recommendedId && <Badge variant="outline">best choice</Badge>}
                     {active && <Badge variant="selected">selected</Badge>}
+                    {hasUpdate && <Badge variant="warning">update available</Badge>}
                   </span>
                   <span className="font-mono text-xs tracking-[0.04em] text-muted-foreground" title={`Commit ${b.manifest.loader.commit.slice(0, 7)}`}>
                     {b.manifest.mods.length} mods · {formatBytes(size)} · built {formatDate(b.manifest.loader.builtAt)}
@@ -85,6 +90,11 @@ export function BundleStep() {
                     </span>
                   )}
                 </button>
+                {hasUpdate && (
+                  <Button variant="outline" size="sm" disabled={installing !== null} onClick={() => update(b.id)} aria-label={`Update ${b.id}`}>
+                    {installing === b.id ? 'Updating…' : 'Update'}
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm" className="size-11 px-0 hover:text-destructive" aria-label={`Remove ${b.id}`} onClick={() => remove(b.id)}>
                   <Trash2 />
                 </Button>
