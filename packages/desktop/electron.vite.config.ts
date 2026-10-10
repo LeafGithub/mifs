@@ -13,6 +13,8 @@ export default defineConfig({
   // Sandboxed preloads cannot require() node_modules, so everything is bundled into the preload.
   preload: { build: { externalizeDeps: false } },
   renderer: {
+    // Never inline assets as data: URIs (small font subsets would be): the production CSP only allows font-src 'self'.
+    build: { assetsInlineLimit: 0 },
     plugins: [
       react(),
       tailwindcss(),
