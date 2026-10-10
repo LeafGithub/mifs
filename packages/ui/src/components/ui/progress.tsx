@@ -1,17 +1,22 @@
 import { Progress as Primitive } from 'radix-ui';
 import { cn } from '../../lib/utils';
 
-/** `value` 0..1, or null for an indeterminate bar. */
-export function Progress({ value, className }: { value: number | null; className?: string }) {
+/** `value` 0..1, or null for an indeterminate line. A thin track with a glowing head, like a ship's heading. */
+export function Progress({ value, className, ...rest }: { value: number | null; className?: string; 'aria-label'?: string }) {
+  const pct = value === null ? null : Math.round(value * 100);
   return (
-    <Primitive.Root
-      value={value === null ? null : Math.round(value * 100)}
-      className={cn('relative h-2 w-full overflow-hidden rounded-full bg-muted', className)}
-    >
+    <Primitive.Root {...rest} value={pct} className={cn('relative my-1 h-0.5 w-full bg-input', className)}>
       <Primitive.Indicator
-        className={cn('h-full rounded-full bg-primary transition-all', value === null && 'w-1/3 animate-pulse')}
-        style={value === null ? undefined : { width: `${Math.round(value * 100)}%` }}
+        className={cn('h-full bg-primary shadow-[0_0_12px_var(--primary)] transition-all', value === null && 'w-1/3 animate-pulse')}
+        style={value === null ? undefined : { width: `${pct}%` }}
       />
+      {pct !== null && (
+        <span
+          aria-hidden
+          className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--glow-core)] shadow-[0_0_14px_3px_var(--primary)] transition-all"
+          style={{ left: `${pct}%` }}
+        />
+      )}
     </Primitive.Root>
   );
 }

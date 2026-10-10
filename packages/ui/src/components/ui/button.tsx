@@ -3,16 +3,16 @@ import * as React from 'react';
 import { cn } from '../../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-sm border font-display text-xs font-normal uppercase tracking-[0.14em] transition-colors disabled:pointer-events-none disabled:opacity-35 [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        secondary: 'bg-muted text-foreground hover:bg-muted/70',
-        outline: 'border border-border bg-transparent hover:bg-accent',
-        ghost: 'hover:bg-accent',
+        default: 'border-primary bg-primary text-primary-foreground hover:bg-primary/85',
+        secondary: 'border-input bg-transparent text-foreground hover:border-foreground',
+        outline: 'border-input bg-transparent text-foreground hover:border-foreground',
+        ghost: 'border-transparent text-muted-foreground hover:text-foreground',
       },
-      size: { default: 'h-9 px-4', sm: 'h-8 px-3 text-xs', lg: 'h-11 px-6 text-base' },
+      size: { default: 'h-11 px-5', sm: 'h-10 px-4', lg: 'h-12 px-7' },
     },
     defaultVariants: { variant: 'default', size: 'default' },
   },

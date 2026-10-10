@@ -1,10 +1,12 @@
 import { CircleAlert, Cloud, Download, Info, KeyRound, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge } from '../components/ui/badge';
+import { KindLabel, KIND_HELP } from '../components/KindLabel';
+import { fieldClass } from '../components/ui/field';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
-import { formatBytes } from '../lib/utils';
+import { formatBytes, formatDate } from '../lib/utils';
 import { useApp } from '../store';
 
 /** "Download a ready-made bundle" section of the loader step. Rendered only when the host has a catalog. */
@@ -21,10 +23,11 @@ export function CatalogPanel() {
   return (
     <Card className="flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 text-sm font-medium">
-          <Cloud className="size-4 text-muted-foreground" /> Download a ready-made bundle
+        <h2 className="flex items-center gap-2 text-sm font-medium">
+          <Cloud className="size-4 text-muted-foreground" /> <span className="hud-only">Download a ready-made bundle</span>
+          <span className="friendly-only">Download a ready-to-use ModLoader</span>
           {c.list && <span className="text-xs font-normal text-muted-foreground">from {c.list.source}</span>}
-        </h3>
+        </h2>
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" onClick={toggleSettings} aria-expanded={c.settingsOpen}>
             <KeyRound /> Settings
@@ -64,11 +67,13 @@ export function CatalogPanel() {
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
                 ModLoader {e.version}
-                {e.kind === 'fork' ? <Badge variant="warning">fork</Badge> : <Badge variant="primary">upstream</Badge>}
-                {e.id === recommended && <Badge variant="success">recommended</Badge>}
+                <Badge variant={e.kind === 'fork' ? 'warning' : 'upstream'} title={e.kind === 'fork' ? KIND_HELP : undefined}>
+                  <KindLabel kind={e.kind === 'fork' ? 'fork' : 'upstream'} />
+                </Badge>
+                {e.id === recommended && <Badge variant="selected">recommended</Badge>}
               </span>
               <span className="text-xs text-muted-foreground">
-                {e.modCount} mods · {formatBytes(e.bundleSize)} download · built {new Date(e.builtAt).toLocaleDateString()}
+                {e.modCount} mods · {formatBytes(e.bundleSize)} download · built {formatDate(e.builtAt)}
               </span>
             </div>
             {c.installing === e.id ? (
@@ -117,7 +122,7 @@ function CatalogSettingsForm() {
             setRepo(e.target.value);
             setTouched(true);
           }}
-          placeholder="owner/repo" className="h-8 rounded-md border bg-background px-2 text-sm text-foreground" />
+          placeholder="owner/repo" className={fieldClass} />
       </label>
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         Access token {settings?.hasToken && <span className="text-success">(saved)</span>}
@@ -127,7 +132,7 @@ function CatalogSettingsForm() {
           value={token}
           onChange={(e) => setToken(e.target.value)}
           placeholder={settings?.hasToken ? 'Leave empty to keep the saved token' : 'Only needed while the repository is private'}
-          className="h-8 rounded-md border bg-background px-2 text-sm text-foreground"
+          className={fieldClass}
         />
         <span>A read-only token for that repository. It is stored encrypted on this computer and never shown again.</span>
       </label>

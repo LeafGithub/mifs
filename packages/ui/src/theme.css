@@ -1,24 +1,17 @@
-/* shadcn/ui-style design tokens (dark). Import after `@import "tailwindcss"` in the host app. */
-:root {
-  color-scheme: dark;
-  --background: oklch(0.17 0.012 265);
-  --foreground: oklch(0.96 0.005 265);
-  --card: oklch(0.21 0.014 265);
-  --card-foreground: oklch(0.96 0.005 265);
-  --muted: oklch(0.26 0.014 265);
-  --muted-foreground: oklch(0.72 0.02 265);
-  --border: oklch(0.31 0.016 265);
-  --input: oklch(0.31 0.016 265);
-  --primary: oklch(0.74 0.14 300);
-  --primary-foreground: oklch(0.17 0.03 300);
-  --accent: oklch(0.28 0.03 300);
-  --accent-foreground: oklch(0.96 0.005 265);
-  --destructive: oklch(0.7 0.19 25);
-  --warning: oklch(0.82 0.15 85);
-  --success: oklch(0.78 0.15 155);
-  --ring: oklch(0.74 0.14 300);
-  --radius: 0.625rem;
-}
+@import '@fontsource/michroma/400.css';
+@import '@fontsource/chivo/400.css';
+@import '@fontsource/chivo/500.css';
+@import '@fontsource/chivo/700.css';
+@import '@fontsource/azeret-mono/400.css';
+@import '@fontsource/azeret-mono/500.css';
+@import '@fontsource/fredoka/600.css';
+@import '@fontsource/nunito/500.css';
+@import '@fontsource/nunito/700.css';
+@import '@fontsource/nunito/800.css';
+
+/* Each theme is a block of variables in themes/<id>.css, scoped to [data-theme='<id>'] (see themes.ts). */
+@import './themes/interstellar.css';
+@import './themes/lilypad.css';
 
 @theme inline {
   --color-background: var(--background);
@@ -38,9 +31,11 @@
   --color-success: var(--success);
   --color-ring: var(--ring);
   --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --radius-md: var(--radius);
+  --radius-sm: calc(var(--radius) / 2);
+  --font-sans: var(--theme-font-sans);
+  --font-display: var(--theme-font-display);
+  --font-mono: var(--theme-font-mono);
 }
 
 @layer base {
@@ -60,6 +55,68 @@
   }
   :focus-visible {
     outline: 2px solid var(--ring);
-    outline-offset: 2px;
+    outline-offset: 3px;
+  }
+  /* Browser surfaces the design didn't draw: native controls, selection and scrollbars take the palette. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--primary);
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 40%, transparent);
+    color: var(--foreground);
+  }
+  * {
+    scrollbar-color: var(--input) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+/* Wording and glyphs that differ by theme voice: HUD themes show .hud-only, friendly themes show .friendly-only. */
+.friendly-only { display: none; }
+[data-theme^='lilypad'] .hud-only { display: none; }
+[data-theme^='lilypad'] .friendly-only { display: inline; }
+svg.friendly-only { display: none; }
+[data-theme^='lilypad'] svg.friendly-only { display: block; }
+
+@layer components {
+  /* Star field behind the whole window: four sparse tiles of different sizes so the repeat never reads.
+     A theme opts in with `shellClass: 'stars'`. */
+  .stars {
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, #fff, transparent), radial-gradient(1px 1px at 140px 90px, #f1ebdf, transparent),
+      radial-gradient(1.5px 1.5px at 210px 180px, #fff, transparent), radial-gradient(1px 1px at 60px 220px, #cfc6b4, transparent);
+    background-size: 263px 241px, 311px 277px, 419px 383px, 197px 251px;
+  }
+  /* HUD corner ticks on a selected or finished card. Colour from --bracket (default primary). */
+  .bracket::before,
+  .bracket::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--bracket, var(--primary));
+    pointer-events: none;
+  }
+  .bracket::before {
+    left: -2px;
+    top: -2px;
+    border-right: 0;
+    border-bottom: 0;
+  }
+  .bracket::after {
+    right: -2px;
+    bottom: -2px;
+    border-left: 0;
+    border-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -1,0 +1,191 @@
+/* Lilypad: soft pastel frog themes. Two worlds on one set of overrides:
+   dusk   = window-sill pink, lavender and powder blue with a mint frog;
+   meadow = sunny lime and mint with cream, peach and pink cheeks.
+   Pastels are for fills and outlines; text uses the deeper --primary-text / success / warning / destructive. */
+[data-theme='lilypad-dusk'] {
+  color-scheme: light;
+  --background: #fdf1f4;
+  --foreground: #34405e;
+  --card: #fff9fb;
+  --card-foreground: #34405e;
+  --muted: #eee8f8;
+  --muted-foreground: #55618a;
+  --border: #a597cf;
+  --input: #8576b3;
+  --shadow-rgb: 90 70 130;
+  --primary: #f5a6c4;
+  --primary-foreground: #34405e;
+  --primary-text: #a8326a;
+  --accent: #ffe9d8;
+  --select: #ffd3b4;
+  --accent-foreground: #34405e;
+  --destructive: #b3263f;
+  --warning: #9a5a12;
+  --success: #1f7a5a;
+  --ring: #6b58c0;
+  --frog: #a9d6d0;
+  --belly: #d3e0f4;
+  --cheek: #f6a5be;
+  --petal: #f6a5be;
+  --pad: #b6d8b8;
+  --glow: #ffe6d2;
+  --tertiary: #c3d3f2;
+  --glow-core: #fff;
+}
+[data-theme='lilypad-meadow'] {
+  color-scheme: light;
+  --background: #f6fbe8;
+  --foreground: #2c4a3a;
+  --card: #fffff3;
+  --card-foreground: #2c4a3a;
+  --muted: #e2f2c8;
+  --muted-foreground: #4c6a55;
+  --border: #6aa766;
+  --input: #4f8f5c;
+  --shadow-rgb: 52 104 66;
+  --primary: #c2e47e;
+  --primary-foreground: #2c4a3a;
+  --primary-text: #36701f;
+  --accent: #ffeed3;
+  --select: #ffd9b6;
+  --accent-foreground: #2c4a3a;
+  --destructive: #b3263f;
+  --warning: #9a5a12;
+  --success: #1f7a5a;
+  --ring: #2e7d4f;
+  --frog: #c3e88d;
+  --belly: #f4f8be;
+  --cheek: #f8b6cc;
+  --petal: #f8b6cc;
+  --pad: #a8d890;
+  --glow: #fff2c2;
+  --tertiary: #ffd9b6;
+  --glow-core: #fff;
+}
+
+[data-theme^='lilypad'] {
+  --radius: 2rem;
+  --rail-width: 17rem;
+  --theme-font-sans: 'Nunito', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --theme-font-display: 'Fredoka', 'Segoe UI', system-ui, sans-serif;
+  --theme-font-mono: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* The components were drawn for a technical HUD (uppercase, wide tracking, mono). Relax that for a friendlier voice. */
+[data-theme^='lilypad'] .uppercase { text-transform: none; }
+[data-theme^='lilypad'] [class*='tracking-'] { letter-spacing: 0; }
+[data-theme^='lilypad'] .font-mono { font-size: 13px; font-weight: 700; }
+[data-theme^='lilypad'] .font-display { font-weight: 600; }
+[data-theme^='lilypad'] .font-display.text-\[11\.5px\] { font-size: 16px; }
+[data-theme^='lilypad'] .font-display.text-\[1\.75rem\] { font-size: 2rem; }
+[data-theme^='lilypad'] .text-primary { color: var(--primary-text); }
+
+/* Controls: pills with a tinted outline and a soft drop. */
+[data-theme^='lilypad'] button.rounded-sm {
+  border-radius: 999px;
+  border-width: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.25s cubic-bezier(0.2, 0.9, 0.3, 1), background-color 0.2s, border-color 0.2s;
+}
+[data-theme^='lilypad'] button.rounded-sm:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 14px -6px rgb(var(--shadow-rgb) / 0.35); }
+[data-theme^='lilypad'] button.rounded-sm:not(:disabled):active { transform: translateY(1px) scale(0.98); box-shadow: none; }
+[data-theme^='lilypad'] button.border-primary { border-color: var(--input); }
+[data-theme^='lilypad'] div.rounded-sm.border { border-width: 2px; box-shadow: 0 10px 24px -12px rgb(var(--shadow-rgb) / 0.3); }
+[data-theme^='lilypad'] span.rounded-sm.border { border-radius: 999px; padding-inline: 0.625rem; }
+[data-theme^='lilypad'] select { border-radius: 999px; padding-inline: 0.875rem; }
+
+/* Progress: a thick pill track, no glowing head. */
+[data-theme^='lilypad'] [role='progressbar'] { height: 0.875rem; border-radius: 999px; background: var(--muted); border: 2px solid var(--input); overflow: hidden; }
+[data-theme^='lilypad'] [role='progressbar'] > div { border-radius: 999px; box-shadow: none; background: var(--primary); }
+[data-theme^='lilypad'] [role='progressbar'] > span { display: none; }
+
+[data-theme^='lilypad'] ::selection { background: var(--primary); color: var(--primary-foreground); }
+[data-theme^='lilypad'] :focus-visible { outline-width: 3px; }
+
+/* HUD corner ticks clash with rounded cards. */
+[data-theme^='lilypad'] .bracket::before,
+[data-theme^='lilypad'] .bracket::after { display: none; }
+
+/* --- Revision: states and surfaces the first pass missed --- */
+/* Disabled controls stay legible: a dashed, tinted pill instead of a faded one. */
+[data-theme^='lilypad'] button.rounded-sm:disabled { opacity: 1; background: transparent; color: var(--muted-foreground); border: 2px dashed var(--input); }
+[data-theme^='lilypad'] button.rounded-sm.border-transparent:disabled { background: transparent; border-color: transparent; opacity: 0.6; }
+/* Selected cards and active rail dots read from the deeper outline; pastel fills alone are too faint on cream. */
+[data-theme^='lilypad'] .border-primary { border-color: var(--input); }
+[data-theme^='lilypad'] .bg-accent\/80 { background-color: var(--accent); }
+/* Hard-coded dark inset (the output path) becomes a soft tinted well. */
+[data-theme^='lilypad'] .bg-black\/35 { background-color: var(--muted); border: 2px solid var(--border); border-radius: 1.25rem; color: var(--foreground); }
+/* The "busy" card was faded to 60%; keep text readable. */
+[data-theme^='lilypad'] .opacity-60 { opacity: 0.85; }
+[data-theme^='lilypad'] .bg-card\/90 { background-color: var(--card); }
+[data-theme^='lilypad'] .rounded-md { border-radius: 1.25rem; }
+[data-theme^='lilypad'] .font-mono.text-\[10px\],
+[data-theme^='lilypad'] .font-mono.text-\[10\.5px\] { font-size: 12px; }
+/* Success button: keep the cream label legible on the green fill. */
+[data-theme^='lilypad'] button.bg-success { color: #fff; border-color: var(--success); }
+/* Scrollbars and the select popup follow the palette. */
+[data-theme^='lilypad'] * { scrollbar-width: thin; scrollbar-color: var(--input) transparent; }
+[data-theme^='lilypad'] select { background-color: var(--card); }
+
+/* --- Critique pass: clarity, type floor, states --- */
+/* Type floor: nothing under 12px; paths read as text, not as bold telemetry. */
+[data-theme^='lilypad'] dt { font-size: 12px; font-weight: 700; }
+[data-theme^='lilypad'] dd.font-mono { font-size: 14px; font-weight: 500; }
+[data-theme^='lilypad'] .font-mono.text-\[11px\],
+[data-theme^='lilypad'] .font-mono.text-\[11\.5px\] { font-size: 13px; }
+[data-theme^='lilypad'] p.font-mono.break-all { font-weight: 500; }
+/* Unselected rail steps keep a readable contrast; the alpha dropped them to about 3:1. */
+[data-theme^='lilypad'] .text-muted-foreground\/70 { color: var(--muted-foreground); }
+/* Alerts and fields follow the same shape language as everything else. */
+[data-theme^='lilypad'] p[role='alert'],
+[data-theme^='lilypad'] p[role='status'] { border-radius: 1.25rem; border-width: 2px; }
+[data-theme^='lilypad'] input:not([type='checkbox']):not([type='radio']),
+[data-theme^='lilypad'] textarea { border-radius: 1rem; border-width: 2px; }
+/* The success "ready" dot loses its HUD glow. */
+[data-theme^='lilypad'] [class*='before:shadow']::before { box-shadow: none; }
+
+/* --- The frog: poses keyed on data-pose (see components/FrogScene.tsx) --- */
+@keyframes fs-bob { 50% { transform: translateY(-6px); } }
+@keyframes fs-work { 50% { transform: translateY(-3px) scaleY(1.02); } }
+@keyframes fs-hop { 0%, 100% { transform: translateY(0) scale(1, 1); } 12% { transform: translateY(0) scale(1.05, 0.93); } 40% { transform: translateY(-18px) scale(0.97, 1.05); } 70% { transform: translateY(0) scale(1.04, 0.95); } }
+@keyframes fs-sway { 50% { transform: rotate(-2.5deg); } }
+@keyframes fs-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+@keyframes fs-fall { from { transform: translateY(-10px) rotate(0); opacity: 1; } to { transform: translateY(230px) rotate(160deg); opacity: 0; } }
+@keyframes fs-twinkle { 50% { opacity: 0.35; } }
+@keyframes fs-spin { to { transform: rotate(360deg); } }
+@keyframes fs-sweat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+[data-theme^='lilypad'] .fs-body { transform-box: fill-box; transform-origin: 50% 100%; }
+[data-theme^='lilypad'] .fs-eyes { transform-box: fill-box; transform-origin: center; animation: fs-blink 5s infinite; }
+[data-theme^='lilypad'] [data-pose='idle'] .fs-body { animation: fs-bob 4.5s ease-in-out infinite; }
+[data-theme^='lilypad'] [data-pose='curious'] .fs-body { animation: fs-sway 3.2s ease-in-out infinite; }
+[data-theme^='lilypad'] [data-pose='working'] .fs-body { animation: fs-work 0.9s ease-in-out infinite; }
+[data-theme^='lilypad'] [data-pose='done'] .fs-body { animation: fs-hop 1.6s cubic-bezier(0.2, 0.9, 0.3, 1) 3; }
+[data-theme^='lilypad'] [data-pose='error'] .fs-body { animation: none; }
+[data-theme^='lilypad'] .fs-drop { animation: fs-sweat 1.4s ease-in-out infinite; }
+[data-theme^='lilypad'] .fs-petal { transform-box: fill-box; transform-origin: center; animation: fs-fall 2.6s ease-in infinite; }
+[data-theme^='lilypad'] .fs-petal:nth-child(2) { animation-delay: 0.7s; }
+[data-theme^='lilypad'] .fs-petal:nth-child(3) { animation-delay: 1.4s; }
+[data-theme^='lilypad'] .fs-twinkle { animation: fs-twinkle 3s ease-in-out infinite; }
+[data-theme^='lilypad'] .fs-rays { transform-box: fill-box; transform-origin: center; animation: fs-spin 40s linear infinite; }
+
+/* Reduced motion: still frog, no lift on hover. */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^='lilypad'] .fs-body,
+  [data-theme^='lilypad'] .fs-eyes,
+  [data-theme^='lilypad'] .fs-petal,
+  [data-theme^='lilypad'] .fs-drop,
+  [data-theme^='lilypad'] .fs-twinkle,
+  [data-theme^='lilypad'] .fs-rays { animation: none; }
+  [data-theme^='lilypad'] button.rounded-sm:not(:disabled):hover,
+  [data-theme^='lilypad'] button.rounded-sm:not(:disabled):active { transform: none; }
+}
+
+/* The rail's Game value may wrap instead of truncating its size. */
+[data-theme^='lilypad'] dd.truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+
+/* Peach carries "selected"; pink and lime stay for action and progress. */
+[data-theme^='lilypad'] span.rounded-sm.border.bg-primary { background-color: var(--select); border-color: var(--input); }
+[data-theme^='lilypad'] .bg-accent\/80 { background-color: var(--accent); }
+/* Badge pills need block padding too. */
+[data-theme^='lilypad'] span.rounded-sm.border { padding-block: 2px; }

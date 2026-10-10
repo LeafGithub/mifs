@@ -4,7 +4,7 @@ import { createStore, useStore, type StoreApi } from 'zustand';
 import type { BundleInfo, CatalogList, CatalogSettings, GameAdapter, GameFile, InjectResult, Platform, Preflight, ProgressEvent } from './platform';
 import { UPSTREAM_REPO } from './lib/sources';
 
-export const STEPS = ['Loader', 'Game', 'Install'] as const;
+export const STEPS = ['Loader', 'Game', 'Create'] as const;
 
 export interface RunState {
   status: 'idle' | 'running' | 'done' | 'error';

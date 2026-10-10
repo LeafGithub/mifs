@@ -23,7 +23,7 @@ export function ModsEditor() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 bg-background pb-2">
         <p className="text-sm text-muted-foreground">
           {chosen.size} of {manifest.mods.length} selected · {formatBytes(total)}. Mods that others need stay on.
         </p>
@@ -38,7 +38,7 @@ export function ModsEditor() {
         </p>
       )}
 
-      <Card className="max-h-80 divide-y overflow-y-auto">
+      <Card className="divide-y">
         <ul aria-label="Mods">
           {manifest.mods.map((m) => {
             const blockedBy = chosen.has(m.id) ? dependentsOf(manifest, m.id, selected) : [];

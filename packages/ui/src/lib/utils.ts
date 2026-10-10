@@ -14,3 +14,9 @@ export function formatBytes(n: number): string {
   }
   return `${v.toFixed(v >= 100 ? 0 : 1)} ${units[i]}`;
 }
+
+/** "9 Oct 2026": month spelled out so day/month order is never ambiguous. */
+export const formatDate = (iso: string): string => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+
+/** Drops only a game-file extension, so "DoL Plus v0.778.html" keeps its version. */
+export const stripGameExt = (name: string): string => name.replace(/\.(html?|zip)$/i, '');

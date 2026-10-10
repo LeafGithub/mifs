@@ -1,5 +1,6 @@
 import { CircleAlert, CircleCheck, CircleX, ChevronDown, Hammer, RefreshCw, Square, TriangleAlert } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { fieldClass } from '../components/ui/field';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
@@ -43,9 +44,9 @@ export function BuildPanel() {
         <div className="flex flex-col gap-5 border-t p-4">
           <section aria-labelledby="req" className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <h3 id="req" className="text-sm font-medium">
+              <h2 id="req" className="text-sm font-medium">
                 Needs on this computer
-              </h3>
+              </h2>
               <Button variant="ghost" size="sm" onClick={recheck} disabled={running}>
                 <RefreshCw /> Check again
               </Button>
@@ -71,7 +72,7 @@ export function BuildPanel() {
                 value={b.tag}
                 onChange={(e) => set({ tag: e.target.value })}
                 disabled={b.mode !== 'release' || b.tags.length === 0}
-                className="h-8 rounded-md border bg-background px-2 text-sm disabled:opacity-50"
+                className={fieldClass}
               >
                 {b.tags.length === 0 && <option value="">{b.tagsError ? 'unavailable' : 'loading…'}</option>}
                 {b.tags.map((t) => (
@@ -96,7 +97,7 @@ export function BuildPanel() {
                     value={b.repo}
                     onChange={(e) => set({ repo: e.target.value })}
                     placeholder="https://github.com/owner/sugarcube-2-ModLoader"
-                    className="h-8 rounded-md border bg-background px-2 text-sm text-foreground"
+                    className={fieldClass}
                   />
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-muted-foreground">
@@ -105,7 +106,7 @@ export function BuildPanel() {
                     value={b.ref}
                     onChange={(e) => set({ ref: e.target.value })}
                     placeholder="master"
-                    className="h-8 rounded-md border bg-background px-2 text-sm text-foreground"
+                    className={fieldClass}
                   />
                 </label>
                 <label className="flex items-start gap-2 rounded-md bg-warning/10 p-3 text-xs text-warning">
@@ -125,7 +126,7 @@ export function BuildPanel() {
                 <Square /> Cancel build
               </Button>
             ) : (
-              <Button onClick={start} disabled={!ready}>
+              <Button variant="outline" onClick={start} disabled={!ready}>
                 <Hammer /> {b.status === 'error' ? 'Try again' : 'Build'}
               </Button>
             )}
@@ -189,7 +190,7 @@ function LogView({ lines }: { lines: string[] }) {
   return (
     <details>
       <summary className="cursor-pointer text-xs text-muted-foreground">Build output ({lines.length} lines)</summary>
-      <pre ref={ref} tabIndex={0} className="mt-2 max-h-48 overflow-auto rounded-md bg-background p-3 font-mono text-[11px] leading-4 text-muted-foreground">
+      <pre ref={ref} tabIndex={0} className="mt-2 max-h-48 overflow-auto rounded-md bg-background p-3 font-mono text-xs leading-4 text-muted-foreground">
         {lines.join('\n')}
       </pre>
     </details>
