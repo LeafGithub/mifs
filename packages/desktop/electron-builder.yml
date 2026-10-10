@@ -14,9 +14,11 @@ asar: true
 npmRebuild: false
 compression: normal
 extraResources:
-  # build-from-source mode runs this script (and reads mods.json next to it) with the user's own Node.js
+  # build-from-source mode runs this script (it imports modlist.mjs and reads mods.json next to it) with the user's own Node.js
   - from: ../../bundle/scripts/build-bundle.mjs
     to: bundle/scripts/build-bundle.mjs
+  - from: ../../bundle/scripts/modlist.mjs
+    to: bundle/scripts/modlist.mjs
   - from: ../../bundle/mods.json
     to: bundle/mods.json
 win:

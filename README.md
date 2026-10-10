@@ -35,7 +35,9 @@ Run the e2e suite against a packaged build with `MIFS_EXE="packages/desktop/rele
   Try it without building anything: `gh workflow run check-upstream.yml -f dry_run=true`.
 - **Notify on CI failure** (`.github/workflows/notify-failure.yml`): when either workflow fails it opens a `ci-failure` issue (GitHub e-mails
   you about issues), comments on repeats, and closes the issue when the same job succeeds again.
-- Checker tests: `node --test bundle/scripts/check-upstream.test.mjs bundle/scripts/ci-failure-issue.test.mjs`.
+- **Which mods a bundle contains:** each ref is built with its own `modList.json` (forks may drop or replace mods; e.g. the thalia fork has no
+  ImageLoaderHook). `bundle/mods.json` holds a fallback list for refs without one, plus extras added per kind of source (upstream: ModuleCssReplacer).
+- Script tests: `node --test bundle/scripts/check-upstream.test.mjs bundle/scripts/ci-failure-issue.test.mjs bundle/scripts/modlist.test.mjs`.
 
 ## Packaging notes
 

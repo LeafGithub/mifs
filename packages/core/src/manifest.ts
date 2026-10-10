@@ -43,7 +43,8 @@ export interface BundleManifest {
   mods: ModEntry[];
   /** License files to ship alongside any copy of the bundle. */
   licenses: string[];
-  builder?: { node?: string; runUrl?: string };
+  /** `modList` records which mod list was used: the ref's own modList.json (plus any extras) or our fallback. */
+  builder?: { node?: string; runUrl?: string; modList?: { source: string; extras: string[] } };
 }
 
 export class ManifestError extends Error {

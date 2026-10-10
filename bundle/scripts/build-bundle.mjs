@@ -11,6 +11,7 @@ import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { parseModList, resolveMods } from './modlist.mjs';
 
 // Fail with one readable line instead of a stack trace; the desktop app shows the last lines of output to the user.
 process.on('uncaughtException', (e) => {
@@ -25,7 +26,9 @@ const { values: args } = parseArgs({
 const UPSTREAM = 'https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoader.git';
 const repo = args.repo ?? UPSTREAM;
 const OUT = resolve(args.out);
-const mods = JSON.parse(readFileSync(join(HERE, '../mods.json'), 'utf8')).mods;
+// mods.json: a fallback list plus extras per kind of source. Each ref is built with its own modList.json (see modlist.mjs).
+const cfg = JSON.parse(readFileSync(join(HERE, '../mods.json'), 'utf8'));
+const kindOf = (url) => (/github\.com[/:]([^/]+)\//.exec(url)?.[1]?.toLowerCase() === 'lyoko-jeremie' ? 'upstream' : 'fork');
 
 const env = { ...process.env, COREPACK_ENABLE_DOWNLOAD_PROMPT: '0' };
 function run(cmd, a, cwd, { capture = false } = {}) {
@@ -39,11 +42,32 @@ const yarn = (a, cwd) => run('corepack', ['yarn', ...a], cwd);
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 // Machine-readable progress for the desktop app (one JSON object per line, prefixed so it cannot be confused with tool output).
 const mark = (label, fraction) => console.log('##mifs ' + JSON.stringify({ label, fraction }));
+const git = (a, cwd = SRC) => run('git', a, cwd, { capture: true });
+
+let SRC;
+let mods = [];
+let modListInfo = { source: 'fallback', extras: [] };
+/** Decides which mods to build and embed, from the checkout's own modList.json. */
+function chooseMods(sourceUrl) {
+  const listPath = join(SRC, 'modList.json');
+  let refList = null;
+  if (existsSync(listPath)) {
+    try {
+      refList = parseModList(readFileSync(listPath, 'utf8'));
+    } catch (e) {
+      console.warn(`warning: ${e.message}; using the fallback list`);
+    }
+  }
+  const r = resolveMods({ refList, fallback: cfg.fallback, extras: cfg.extras, kind: kindOf(sourceUrl) });
+  console.log(`Mod list: ${r.source}${r.extras.length ? ` plus ${r.extras.length} extra` : ''}, ${r.mods.length} mods`);
+  mods = r.mods;
+  modListInfo = { source: r.source, extras: r.extras };
+}
 
 // ---- 1. source checkout + build ------------------------------------------------------------------------------
-let SRC;
 if (args.src) {
   SRC = resolve(args.src);
+  chooseMods(git(['remote', 'get-url', 'origin']) || UPSTREAM);
 } else {
   if (!args.ref) throw new Error('--ref is required unless --src is given');
   SRC = join(resolve(args.work), 'src');
@@ -51,6 +75,7 @@ if (args.src) {
   mkdirSync(dirname(SRC), { recursive: true });
   mark('Downloading the source', 0.02);
   run('git', ['clone', '--depth', '1', '--branch', args.ref, '--recurse-submodules', '--shallow-submodules', repo, SRC], dirname(SRC));
+  chooseMods(repo);
   mark('Installing loader dependencies', 0.05);
   yarn(['install'], SRC);
   const loaderSteps = ['ts:BeforeSC2', 'webpack:BeforeSC2', 'webpack:BeforeSC2-comp', 'ts:ForSC2', 'webpack:insertTools'];
@@ -77,7 +102,6 @@ if (args.src) {
 
 mark('Collecting files', 0.96);
 // ---- 2. collect -----------------------------------------------------------------------------------------------
-const git = (a, cwd = SRC) => run('git', a, cwd, { capture: true });
 const commit = git(['rev-parse', 'HEAD']);
 const remoteUrl = args.repo ?? (git(['remote', 'get-url', 'origin']) || UPSTREAM);
 const ref = args.ref ?? git(['describe', '--tags', '--always']);
@@ -86,7 +110,7 @@ const version = /get version\(\)[^{]*\{\s*return\s+'(\d+\.\d+\.\d+)'/.exec(utils
 if (!version) throw new Error('could not read the loader version from src/BeforeSC2/Utils.ts');
 
 const owner = /github\.com[/:]([^/]+)\//.exec(remoteUrl)?.[1]?.toLowerCase() ?? 'unknown';
-const kind = owner === 'lyoko-jeremie' ? 'upstream' : 'fork';
+const kind = kindOf(remoteUrl);
 const id = `${kind === 'upstream' ? 'upstream' : owner}-${version}-${commit.slice(0, 7)}`;
 
 rmSync(OUT, { recursive: true, force: true });
@@ -136,7 +160,7 @@ const manifest = {
   beforeSC2: fileRef('BeforeSC2.js', beforeBuf),
   mods: modEntries,
   licenses,
-  builder: { node: process.version, runUrl: process.env.GITHUB_SERVER_URL && process.env.GITHUB_RUN_ID ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` : undefined },
+  builder: { modList: modListInfo, node: process.version, runUrl: process.env.GITHUB_SERVER_URL && process.env.GITHUB_RUN_ID ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` : undefined },
 };
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 

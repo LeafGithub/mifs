@@ -1,6 +1,6 @@
 {
-  "_comment": "Zips to build and embed, relative to <ModLoader checkout>/mod/. Order = default load order.",
-  "mods": [
+  "_comment": "Fallback list (used only when a ref has no usable modList.json) and extra mods added per kind of source. Each ref is built with its own modList.json.",
+  "fallback": [
     "ModLoaderGui/ModLoaderGui.mod.zip",
     "ConflictChecker/ConflictChecker.mod.zip",
     "ImageLoaderHook/ModLoader DoL ImageLoaderHook.mod.zip",
@@ -22,7 +22,12 @@
     "ModdedHairAddon/ModdedHairAddon.mod.zip",
     "ModdedFeatsAddon/ModdedFeatsAddon.mod.zip",
     "SweetAlert2Mod/SweetAlert2Mod.mod.zip",
-    "ModuleCssReplacer/ModuleCssReplacer.mod.zip",
     "DoLLinkButtonFilter/DoLLinkButtonFilter.mod.zip"
-  ]
+  ],
+  "extras": {
+    "upstream": [
+      "ModuleCssReplacer/ModuleCssReplacer.mod.zip"
+    ],
+    "fork": []
+  }
 }
