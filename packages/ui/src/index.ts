@@ -1,6 +1,7 @@
 export { App } from './App';
 export { PlatformError } from './platform';
 export type {
+  AppUpdate,
   BuildRequest,
   BundleInfo,
   CatalogEntry,

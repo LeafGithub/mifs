@@ -9,6 +9,7 @@ import { installFromCatalog, listCatalog } from './services/catalog';
 import { getCatalogSettings, saveCatalogSettings } from './services/settings';
 import { fetchLatestGame, gameOriginDir, listAdapters, pickGameFile } from './services/games';
 import { allowedOutputs, runInject } from './services/inject';
+import { checkUpdate, downloadUpdate, getUpdate, initUpdater, installUpdate } from './services/updater';
 
 // Keep user data in a stable folder that does not depend on the product name (tests pass --user-data-dir instead).
 if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', join(app.getPath('appData'), 'MIFS'));
@@ -91,6 +92,11 @@ function registerHandlers() {
   );
   handle('build:cancel', null, () => cancelBuild());
 
+  handle('update:get', null, () => getUpdate());
+  handle('update:check', null, () => checkUpdate());
+  handle('update:download', null, () => downloadUpdate());
+  handle('update:install', null, () => installUpdate());
+
   handle('shell:showInFolder', z.object({ path: z.string() }), ({ path }) => shell.showItemInFolder(path));
 }
 
@@ -105,6 +111,7 @@ if (!app.requestSingleInstanceLock()) {
     registerHandlers();
     createWindow();
     void sweepStaleBuilds(); // leftovers from a run that was killed mid-build
+    initUpdater((u) => win?.webContents.send('update', u));
     app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && createWindow());
   });
   app.on('window-all-closed', () => app.quit());

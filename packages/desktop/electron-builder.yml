@@ -10,6 +10,11 @@ files:
   - out/**
   - package.json
 electronVersion: 44.7.0 # pinned: electron-builder needs an exact version
+publish:
+  # Read by electron-updater at runtime (written to app-update.yml); builds never publish by themselves, CI uploads the files.
+  provider: github
+  owner: LeafGithub
+  repo: mifs
 asar: true
 npmRebuild: false
 compression: normal

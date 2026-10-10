@@ -15,7 +15,6 @@
     "dist": "electron-vite build && electron-builder --win",
     "dist:dir": "electron-vite build && electron-builder --win --dir"
   },
-  "dependencies": {},
   "devDependencies": {
     "@mifs/core": "*",
     "@mifs/ui": "*",
@@ -28,6 +27,7 @@
     "electron": "44.7.0",
     "electron-builder": "^26.15.3",
     "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.9",
     "electron-vite": "^5.0.0",
     "fflate": "^0.8.3",
     "react": "^19.3.0",

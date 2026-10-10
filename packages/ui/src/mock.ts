@@ -1,5 +1,5 @@
 import { parseManifest } from '@mifs/core';
-import { PlatformError, type BundleInfo, type GameAdapter, type GameFile, type Platform, type ProgressEvent } from './platform';
+import { PlatformError, type AppUpdate, type BundleInfo, type GameAdapter, type GameFile, type Platform, type ProgressEvent } from './platform';
 
 const sha = (c: string) => c.repeat(64);
 const mod = (id: string, version: string, size: number, deps: string[] = [], extra: Record<string, unknown> = {}) => ({
@@ -53,6 +53,13 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
   const listeners = new Set<(e: ProgressEvent) => void>();
   const emit = (e: ProgressEvent) => listeners.forEach((l) => l(e));
   const logListeners = new Set<(lines: string[]) => void>();
+  const updateListeners = new Set<(u: AppUpdate) => void>();
+  let update: AppUpdate = { state: 'idle', current: '0.1.0', selfUpdate: true };
+  const setUpdate = (patch: Partial<AppUpdate>) => {
+    update = { ...update, ...patch };
+    updateListeners.forEach((l) => l(update));
+    return update;
+  };
   const buildLog = (lines: string[]) => logListeners.forEach((l) => l(lines));
   let cancelled = false;
   let catalogRepo = 'LeafGithub/mifs';
@@ -149,6 +156,26 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
       onLog: (l) => {
         logListeners.add(l);
         return () => void logListeners.delete(l);
+      },
+    },
+    update: {
+      get: async () => update,
+      check: async () => {
+        setUpdate({ state: 'checking' });
+        await wait(delay / 2);
+        return setUpdate({ state: 'available', latest: '0.2.0' });
+      },
+      download: async () => {
+        for (let i = 1; i <= 4; i++) {
+          setUpdate({ state: 'downloading', fraction: i / 4 });
+          await wait(delay / 2);
+        }
+        return setUpdate({ state: 'ready' });
+      },
+      install: async () => {},
+      onChange: (l) => {
+        updateListeners.add(l);
+        return () => void updateListeners.delete(l);
       },
     },
     onProgress: (l) => {

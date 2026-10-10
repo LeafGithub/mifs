@@ -58,6 +58,8 @@ jobs:
           path: |
             packages/desktop/release/MIFS-Setup-*.exe
             packages/desktop/release/MIFS-*-portable.exe
+            packages/desktop/release/MIFS-Setup-*.exe.blockmap
+            packages/desktop/release/latest.yml
           if-no-files-found: error
 
       - name: Publish release
@@ -67,7 +69,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${{ github.ref_name }}"
-          files=(packages/desktop/release/MIFS-Setup-*.exe packages/desktop/release/MIFS-*-portable.exe)
+          # latest.yml and the blockmap are what the installed app's updater reads
+          files=(packages/desktop/release/MIFS-Setup-*.exe packages/desktop/release/MIFS-*-portable.exe packages/desktop/release/MIFS-Setup-*.exe.blockmap packages/desktop/release/latest.yml)
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" "${files[@]}" --clobber
           else

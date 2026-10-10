@@ -104,6 +104,21 @@ export interface BuildRequest {
   ref: string;
 }
 
+/** State of the app's own update check. `unsupported` means this build cannot check (a development run). */
+export interface AppUpdate {
+  state: 'unsupported' | 'idle' | 'checking' | 'none' | 'available' | 'downloading' | 'ready' | 'error';
+  /** Version of the running app. */
+  current: string;
+  /** Newer version, when one was found. */
+  latest?: string;
+  /** 0..1 while downloading. */
+  fraction?: number;
+  /** The installed (setup) build updates itself; the portable one can only point to the release page. */
+  selfUpdate: boolean;
+  /** Why the last check or download failed. */
+  error?: string;
+}
+
 /** Everything the UI needs from its host. Desktop implements it over IPC, the web app in the browser. */
 export interface Platform {
   bundles: {
@@ -148,6 +163,16 @@ export interface Platform {
     cancel(): Promise<void>;
     /** Subscribes to raw build output lines. */
     onLog(listener: (lines: string[]) => void): () => void;
+  };
+  /** Updating the app itself. Absent on hosts that update by other means (the web app). */
+  update?: {
+    get(): Promise<AppUpdate>;
+    check(): Promise<AppUpdate>;
+    /** Downloads the newer version (installed build only). */
+    download(): Promise<AppUpdate>;
+    /** Restarts into the downloaded version (installed build) or opens the release page (portable build). */
+    install(): Promise<void>;
+    onChange(listener: (u: AppUpdate) => void): () => void;
   };
   /** Subscribes to progress events; returns an unsubscribe function. */
   onProgress(listener: (event: ProgressEvent) => void): () => void;

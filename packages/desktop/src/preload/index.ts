@@ -1,4 +1,4 @@
-import { PlatformError, type Platform, type ProgressEvent } from '@mifs/ui/platform';
+import { PlatformError, type AppUpdate, type Platform, type ProgressEvent } from '@mifs/ui/platform';
 import { contextBridge, ipcRenderer } from 'electron';
 
 type Result<T> = { ok: true; value: T } | { ok: false; error: { code: string; message: string } };
@@ -38,6 +38,17 @@ const api: Platform = {
       const handler = (_: unknown, lines: string[]) => listener(lines);
       ipcRenderer.on('build:log', handler);
       return () => void ipcRenderer.removeListener('build:log', handler);
+    },
+  },
+  update: {
+    get: () => call('update:get'),
+    check: () => call('update:check'),
+    download: () => call('update:download'),
+    install: () => call('update:install'),
+    onChange(listener) {
+      const handler = (_: unknown, u: AppUpdate) => listener(u);
+      ipcRenderer.on('update', handler);
+      return () => void ipcRenderer.removeListener('update', handler);
     },
   },
   onProgress(listener) {

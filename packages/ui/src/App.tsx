@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, Check, CircleAlert, Hammer } from 'lucide-react'
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { KindLabel } from './components/KindLabel';
 import { ThemeSelect } from './components/ThemeSelect';
+import { UpdateNotice } from './components/UpdateNotice';
 import { Button } from './components/ui/button';
 import { useTheme, type Theme } from './themes';
 import { cn, formatBytes, stripGameExt } from './lib/utils';
@@ -15,7 +16,7 @@ export function App({ platform }: { platform: Platform }) {
   const store = useMemo(() => createAppStore(platform), [platform]);
   return (
     <StoreContext.Provider value={store}>
-      <Shell />
+      <Shell platform={platform} />
     </StoreContext.Provider>
   );
 }
@@ -35,7 +36,7 @@ const FRIENDLY_HINTS = [
 
 const CAPTIONS = ['Pick a bundle', 'Target HTML file', 'Write modded file'] as const;
 
-function Shell() {
+function Shell({ platform }: { platform: Platform }) {
   const step = useApp((s) => s.step);
   const go = useApp((s) => s.go);
   const init = useApp((s) => s.init);
@@ -69,7 +70,7 @@ function Shell() {
 
   return (
     <div className={cn('relative grid h-full grid-cols-[var(--rail-width)_1fr] grid-rows-[minmax(0,1fr)] overflow-hidden bg-background', theme.shellClass)}>
-      <Rail step={step} canNext={canNext} running={running} allDone={finished} go={go} theme={theme} setTheme={setTheme} />
+      <Rail step={step} canNext={canNext} running={running} allDone={finished} go={go} theme={theme} setTheme={setTheme} platform={platform} />
 
       <main className="relative flex min-h-0 min-w-0 flex-col px-12 pb-7 pt-9">
         {theme.Backdrop && <theme.Backdrop finished={finished} running={running} failed={failed} step={step} />}
@@ -138,7 +139,9 @@ function Rail({
   go,
   theme,
   setTheme,
+  platform,
 }: {
+  platform: Platform;
   step: number;
   canNext: boolean;
   running: boolean;
@@ -203,6 +206,8 @@ function Rail({
       </ol>
 
       <Ledger />
+      <div className="mt-4" />
+      <UpdateNotice platform={platform} />
       <ThemeSelect theme={theme} onChange={setTheme} />
     </nav>
   );
