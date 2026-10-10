@@ -270,7 +270,7 @@ test.describe('bundle catalog', () => {
 
     await configure(page, TOKEN);
     await expect(page.getByRole('list', { name: 'Available bundles' })).toContainText(/ModLoader 2\.\d+\.\d+/);
-    await expect(page.getByText('recommended')).toBeVisible();
+    await expect(page.getByText('recommended', { exact: true })).toBeVisible(); // the badge, not page copy that contains the word
 
     await page.getByRole('button', { name: 'Download' }).click();
     await expect(page.getByText('selected', { exact: true })).toBeVisible({ timeout: 60_000 });
