@@ -120,8 +120,8 @@ export interface Platform {
     fetchLatest(adapterId: string): Promise<GameFile>;
   };
   output: {
-    /** Opens a save dialog. Null when cancelled. */
-    pick(suggestedName: string): Promise<string | null>;
+    /** Opens a save dialog, starting next to the game file when it came from the user's disk. Null when cancelled. */
+    pick(suggestedName: string, gameId?: string): Promise<string | null>;
   };
   inject: {
     run(request: InjectRequest): Promise<InjectResult>;

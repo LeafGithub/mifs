@@ -332,7 +332,7 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
 
       async pickOutput() {
         try {
-          const path = await platform.output.pick(suggestedOutputName(get().game));
+          const path = await platform.output.pick(suggestedOutputName(get().game), get().game?.id);
           if (path) set({ outputPath: path });
         } catch (e) {
           set({ error: message(e) });

@@ -7,7 +7,7 @@ import { importBundleFolder, listBundles, removeBundle } from './services/bundle
 import { cancelBuild, listTags, preflight, startBuild, sweepStaleBuilds } from './services/build';
 import { installFromCatalog, listCatalog } from './services/catalog';
 import { getCatalogSettings, saveCatalogSettings } from './services/settings';
-import { fetchLatestGame, listAdapters, pickGameFile } from './services/games';
+import { fetchLatestGame, gameOriginDir, listAdapters, pickGameFile } from './services/games';
 import { allowedOutputs, runInject } from './services/inject';
 
 // Keep user data in a stable folder that does not depend on the product name (tests pass --user-data-dir instead).
@@ -61,10 +61,11 @@ function registerHandlers() {
   handle('games:pickFile', null, () => pickGameFile(win));
   handle('games:fetchLatest', z.object({ adapterId: z.string() }), ({ adapterId }) => fetchLatestGame(adapterId, progress));
 
-  handle('output:pick', z.object({ suggestedName: z.string().max(200) }), async ({ suggestedName }) => {
+  handle('output:pick', z.object({ suggestedName: z.string().max(200), gameId: z.string().optional() }), async ({ suggestedName, gameId }) => {
+    const dir = (gameId && gameOriginDir(gameId)) || app.getPath('documents');
     const res = await dialog.showSaveDialog(win ?? undefined!, {
       title: 'Save the modded game',
-      defaultPath: join(app.getPath('documents'), suggestedName.replace(/[\\/:*?"<>|]+/g, ' ')),
+      defaultPath: join(dir, suggestedName.replace(/[\\/:*?"<>|]+/g, ' ')),
       filters: [{ name: 'Game page', extensions: ['html'] }],
     });
     if (res.canceled || !res.filePath) return null;

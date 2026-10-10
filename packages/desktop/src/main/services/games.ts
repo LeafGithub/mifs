@@ -3,7 +3,7 @@ import { dialog, type BrowserWindow } from 'electron';
 import { unzipSync } from 'fflate';
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { AppError } from '../ipc';
 import { SAFE_NAME, gamesDir } from '../paths';
 
@@ -26,14 +26,18 @@ const ADAPTERS: AdapterDef[] = [
 export const listAdapters = (): GameAdapter[] => ADAPTERS.map(({ id, name, description }) => ({ id, name, description }));
 
 /** Files the renderer may refer to, by opaque id. The renderer never sees or supplies paths for games. */
-const registry = new Map<string, { path: string; name: string; size: number }>();
+const registry = new Map<string, { path: string; name: string; size: number; originDir?: string }>();
 
-async function register(path: string, name: string, source: GameFile['source']): Promise<GameFile> {
+/** `originDir` is the folder the user's own file came from; downloads and unpacked copies have none. */
+async function register(path: string, name: string, source: GameFile['source'], originDir?: string): Promise<GameFile> {
   const id = randomUUID();
   const size = (await stat(path)).size;
-  registry.set(id, { path, name, size });
+  registry.set(id, { path, name, size, originDir });
   return { id, name, size, source };
 }
+
+/** Folder to offer when saving the result: next to the file the user picked, so the page sits beside the game's image folders. */
+export const gameOriginDir = (id: string): string | undefined => registry.get(id)?.originDir;
 
 export function gamePath(id: string): string {
   const g = registry.get(id);
@@ -63,14 +67,15 @@ export async function pickGameFile(win: BrowserWindow | null): Promise<GameFile 
   const file = pick.filePaths[0];
   if (pick.canceled || !file) return null;
 
-  if (!file.toLowerCase().endsWith('.zip')) return register(file, basename(file), 'file');
+  const originDir = dirname(file);
+  if (!file.toLowerCase().endsWith('.zip')) return register(file, basename(file), 'file', originDir);
 
   const html = extractHtml(new Uint8Array(await readFile(file)));
   const dir = join(gamesDir(), 'imported', randomUUID());
   await mkdir(dir, { recursive: true });
   const out = join(dir, html.name);
   await writeFile(out, html.data);
-  return register(out, html.name, 'file');
+  return register(out, html.name, 'file', originDir);
 }
 
 interface Release {

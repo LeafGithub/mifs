@@ -20,7 +20,7 @@ const api: Platform = {
     pickFile: () => call('games:pickFile'),
     fetchLatest: (adapterId) => call('games:fetchLatest', { adapterId }),
   },
-  output: { pick: (suggestedName) => call('output:pick', { suggestedName }) },
+  output: { pick: (suggestedName, gameId) => call('output:pick', { suggestedName, gameId }) },
   inject: { run: (request) => call('inject:run', request) },
   shell: { showInFolder: (path) => call('shell:showInFolder', { path }) },
   catalog: {
