@@ -1,5 +1,5 @@
-// Runs ModLoader's real sc2PatchTool.js + insert2html.js (from the modloader-lab build) on real game HTML and
-// checks that @mifs/core produces an equivalent page. Skipped when the lab artifacts are not present.
+// Runs ModLoader's own sc2PatchTool.js and insert2html.js (modloader-lab build) on real game HTML and
+// checks that @mifs/core gives an equivalent page. Skipped without the lab.
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -53,8 +53,8 @@ describe.skipIf(!ready)('conformance with the real ModLoader tools', () => {
         });
         expect(warnings).toEqual([]);
 
-        // The real tool re-serializes the page through cheerio; core edits the text in place. Compare after
-        // pushing both through the same parser, which is what a browser would see.
+        // The real tool re-serializes through cheerio; core edits text in place.
+        // Compare after parsing both the same way.
         const cheerio = createRequire(join(SRC, 'package.json'))('cheerio');
         const normalize = (s: string): string => cheerio.load(s).root().html();
         const sameAfterNormalize = normalize(actual) === normalize(expected);

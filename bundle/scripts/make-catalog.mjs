@@ -1,7 +1,7 @@
-// Build catalog.json: the list of published bundles, so clients can offer versions without scanning releases.
-// Usage: node scripts/make-catalog.mjs <owner/repo> > catalog.json      (needs `gh` authenticated; runs in CI)
+// Builds catalog.json, the list of published bundles.
+// Usage: node scripts/make-catalog.mjs <owner/repo> > catalog.json   (needs an authenticated `gh`; runs in CI)
 //
-// Each bundle release has the tag "loader-<bundle id>" and a small manifest.json asset that is read for the entry.
+// Each bundle release is tagged "loader-<bundle id>" and has a small manifest.json asset that is read for the entry.
 import { spawnSync } from 'node:child_process';
 import { bundleFingerprint } from './fingerprint.mjs';
 
@@ -30,9 +30,9 @@ for (const rel of releases) {
     commit: m.loader.commit,
     builtAt: m.loader.builtAt,
     modCount: m.mods.length,
-    // what the bundle contains; lets clients tell a republished bundle from a rebuild of the same content
+    // content fingerprint, to tell a republish from a rebuild
     fingerprint: bundleFingerprint(m),
-    // Public repos can use the browser URLs; private ones need the API asset ids (plus a token).
+    // Public repos use browser URLs; private ones need API asset ids and a token.
     manifestAssetId: manifestAsset.id,
     bundleAssetId: zipAsset.id,
     bundleSha256: typeof zipAsset.digest === 'string' && zipAsset.digest.startsWith('sha256:') ? zipAsset.digest.slice(7) : undefined,

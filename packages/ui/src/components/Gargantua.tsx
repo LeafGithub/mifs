@@ -6,9 +6,9 @@ const stroke = (color: string): CSSProperties => ({ stroke: color });
 export type GargantuaState = 'idle' | 'running' | 'done' | 'failed';
 
 /**
- * Decorative black hole with its lensed accretion disk, coloured by the theme's --disk variables.
- * `state` drives the one authored moment: the disk spins up while the file is written, flares once and settles on
- * success, and cools to rust on failure (the keyframes live in themes/interstellar.css).
+ * Decorative black hole with a lensed accretion disk, coloured by the theme's --disk variables.
+ * `state`: the disk spins up while the file is written, flares and settles on success, cools to rust on failure
+ * (keyframes in themes/interstellar.css).
  */
 export function Gargantua({ className, state = 'idle' }: { className?: string; state?: GargantuaState }) {
   const id = useId();

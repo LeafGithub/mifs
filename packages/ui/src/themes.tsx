@@ -3,10 +3,10 @@ import { FrogScene, poseFor } from './components/FrogScene';
 import { Gargantua } from './components/Gargantua';
 
 /**
- * A theme is a CSS block (themes/<id>.css, scoped to [data-theme='<id>']) plus what CSS alone cannot do.
- * Layout and decoration are the theme's to change: `Backdrop` is drawn behind the page, `shellClass` is added to the
- * window (e.g. the star field), and CSS variables such as --rail-width reshape the layout.
- * To add a theme: write its CSS file, import it in theme.css, and add an entry here.
+ * A theme is a CSS block (themes/<id>.css, scoped to [data-theme='<id>']) plus what CSS cannot do.
+ * `Backdrop` is drawn behind the page, `shellClass` is added to the window (e.g. the star field), and CSS
+ * variables such as --rail-width reshape the layout.
+ * To add a theme: write its CSS file, import it in theme.css, add an entry here.
  */
 /** Where the wizard is, so a backdrop can react to it. */
 export interface BackdropState {
@@ -27,23 +27,12 @@ export interface Theme {
   shellClass?: string;
   /** Art behind the header. Must be decorative (aria-hidden) and ignore pointer events. */
   Backdrop?: ComponentType<BackdropState>;
-  /** A larger reward shown under the result card when the run finishes. */
+  /** Larger reward under the result card when the run finishes. */
   Celebrate?: ComponentType;
 }
 
 export const THEMES: readonly Theme[] = [
-  {
-    id: 'interstellar',
-    name: 'Interstellar',
-    shellClass: 'stars',
-    Backdrop: ({ finished, running, failed }) => (
-      // Sized from the viewport and faded toward the text column so the disc never sits behind the header copy.
-      <Gargantua
-        state={failed ? 'failed' : running ? 'running' : finished ? 'done' : 'idle'}
-        className="pointer-events-none absolute -top-24 -right-[clamp(5rem,9vw,9rem)] w-[clamp(16rem,36vw,40rem)] min-[1000px]:-top-10 [mask-image:linear-gradient(to_left,#000_55%,transparent)]"
-      />
-    ),
-  },
+  // The first entry is the default theme.
   {
     id: 'lilypad-dusk',
     name: 'Lilypad dusk',
@@ -55,6 +44,18 @@ export const THEMES: readonly Theme[] = [
     name: 'Lilypad meadow',
     Backdrop: (state) => (state.finished ? null : <FrogScene className={FROG} world="meadow" pose={poseFor(state)} />),
     Celebrate: () => <FrogScene className={CELEBRATE} world="meadow" pose="done" />,
+  },
+  {
+    id: 'interstellar',
+    name: 'Interstellar',
+    shellClass: 'stars',
+    Backdrop: ({ finished, running, failed }) => (
+      // Sized from the viewport and faded toward the text so the disc stays off the header copy.
+      <Gargantua
+        state={failed ? 'failed' : running ? 'running' : finished ? 'done' : 'idle'}
+        className="pointer-events-none absolute -top-24 -right-[clamp(5rem,9vw,9rem)] w-[clamp(16rem,36vw,40rem)] min-[1000px]:-top-10 [mask-image:linear-gradient(to_left,#000_55%,transparent)]"
+      />
+    ),
   },
 ];
 

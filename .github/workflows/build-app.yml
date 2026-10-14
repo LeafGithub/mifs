@@ -1,5 +1,5 @@
-# Builds the MIFS installers (setup + portable) on a Windows runner. A version tag (v*) also publishes them as a release.
-# Typecheck and unit tests gate the build; the Playwright e2e suite is not run here.
+# Builds the MIFS installers (setup + portable) on Windows. A v* tag also publishes them as a release.
+# Typecheck and unit tests gate the build; e2e is not run here.
 name: Build app
 run-name: Build app ${{ github.ref_name }}
 
@@ -69,7 +69,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${{ github.ref_name }}"
-          # latest.yml and the blockmap are what the installed app's updater reads
+          # the updater reads latest.yml and the blockmap
           files=(packages/desktop/release/MIFS-Setup-*.exe packages/desktop/release/MIFS-*-portable.exe packages/desktop/release/MIFS-Setup-*.exe.blockmap packages/desktop/release/latest.yml)
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" "${files[@]}" --clobber

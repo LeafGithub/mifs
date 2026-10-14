@@ -7,8 +7,8 @@ export interface FileRef {
 
 export interface DepRange {
   /**
-   * Mod name as it appears in the dependent's boot.json. Two names are virtual: `"ModLoader"` is the loader itself
-   * and `"GameVersion"` is the game's version, which the CheckGameVersion mod verifies at runtime (e.g. `>0.5 && <0.6`).
+   * Mod name as in the dependent's boot.json. Two names are virtual: `"ModLoader"` (the loader) and
+   * `"GameVersion"` (checked at runtime by CheckGameVersion, e.g. `>0.5 && <0.6`).
    */
   name: string;
   /** npm-style semver range, e.g. `^2.100.0`. */
@@ -43,7 +43,7 @@ export interface BundleManifest {
   mods: ModEntry[];
   /** License files to ship alongside any copy of the bundle. */
   licenses: string[];
-  /** `modList` records which mod list was used: the ref's own modList.json (plus any extras) or our fallback. */
+  /** Which mod list was used: the ref's own modList.json (plus extras) or the fallback. */
   builder?: { node?: string; runUrl?: string; modList?: { source: string; extras: string[] } };
 }
 
@@ -69,7 +69,7 @@ function strArray(v: unknown, where: string): string[] {
   return v as string[];
 }
 
-/** Relative, forward-slash paths only: the app reads and writes these, so no absolute paths or `..`. */
+/** Relative, forward-slash paths only: no absolute paths or `..`. */
 function safePath(p: string, where: string): string {
   if (p.startsWith('/') || p.includes('\\') || /^[a-zA-Z]:/.test(p) || p.split('/').some((s) => s === '..' || s === '' || s === '.')) {
     throw new ManifestError(`${where} is not a safe relative path: ${JSON.stringify(p)}`);
@@ -86,7 +86,7 @@ function fileRef(v: unknown, where: string): FileRef {
   return { path: safePath(str(v, 'path', where), `${where}.path`), sha256, size };
 }
 
-/** Validates untrusted JSON (a downloaded manifest) and returns it typed. Throws `ManifestError`. */
+/** Validates untrusted JSON (a downloaded manifest). Throws `ManifestError`. */
 export function parseManifest(json: unknown): BundleManifest {
   if (!isObj(json)) throw new ManifestError('not an object');
   if (json.schema !== 1) throw new ManifestError(`unsupported schema ${JSON.stringify(json.schema)} (this app understands 1)`);

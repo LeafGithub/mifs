@@ -11,7 +11,7 @@ import { fetchLatestGame, gameOriginDir, listAdapters, pickGameFile } from './se
 import { allowedOutputs, runInject } from './services/inject';
 import { checkUpdate, downloadUpdate, getUpdate, initUpdater, installUpdate } from './services/updater';
 
-// Keep user data in a stable folder that does not depend on the product name (tests pass --user-data-dir instead).
+// Stable user data folder, independent of the product name (tests pass --user-data-dir).
 if (!app.commandLine.hasSwitch('user-data-dir')) app.setPath('userData', join(app.getPath('appData'), 'MIFS'));
 
 log.initialize();

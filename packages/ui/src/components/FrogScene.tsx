@@ -1,4 +1,4 @@
-/** What the frog is doing. Driven by the wizard: waiting, looking at the options, working, celebrating, or worried. */
+/** What the frog is doing, driven by the wizard. */
 export type FrogPose = 'idle' | 'curious' | 'working' | 'done' | 'error';
 
 export function poseFor({ step, running, finished, failed }: { step: number; running: boolean; finished: boolean; failed: boolean }): FrogPose {
@@ -9,8 +9,8 @@ export function poseFor({ step, running, finished, failed }: { step: number; run
 }
 
 /**
- * Lilypad's mascot: a chubby frog on a pad. Colours come from the theme's CSS variables; motion lives in
- * lilypad.css (.fs-*), keyed on data-pose. Each world gets its own props: a moon for dusk, a sun and grass for meadow.
+ * Lilypad's mascot: a frog on a pad. Colours come from the theme's CSS variables, motion from
+ * lilypad.css (.fs-*) keyed on data-pose. Dusk has a moon; meadow has a sun and grass.
  */
 export function FrogScene({ className, world, pose }: { className?: string; world: 'dusk' | 'meadow'; pose: FrogPose }) {
   const outline = { fill: 'var(--frog)', stroke: 'var(--input)', strokeWidth: 8 };

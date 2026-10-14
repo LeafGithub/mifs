@@ -1,5 +1,5 @@
-# Builds a ModLoader bundle (BeforeSC2.js + all mods + licenses + manifest) from any repo/ref and publishes it as a release.
-# Runs from the repository root; the scripts live in bundle/scripts/.
+# Builds a ModLoader bundle (BeforeSC2.js, mods, licenses, manifest) from any repo/ref and publishes it as a release.
+# Runs from the repo root; scripts live in bundle/scripts/.
 name: Build ModLoader bundle
 run-name: Build bundle ${{ inputs.ref }} from ${{ inputs.repo }}
 
@@ -58,6 +58,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           node bundle/scripts/make-catalog.mjs "${{ github.repository }}" > catalog.json
-          # fixed tag so clients always find it at .../releases/download/catalog/catalog.json
+          # fixed tag, so clients find it at .../releases/download/catalog/catalog.json
           gh release view catalog >/dev/null 2>&1 || gh release create catalog --title "Bundle catalog" --notes "Index of published bundles. Do not delete." --prerelease
           gh release upload catalog catalog.json --clobber

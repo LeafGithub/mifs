@@ -14,9 +14,9 @@ import { BUILD_NEEDS_BYTES, diskStatus, failureMessage, lineSplitter, nodeMajor,
 const MIN_NODE_MAJOR = 18;
 const isWin = process.platform === 'win32';
 
-/** Runs a tool with fixed arguments and returns its trimmed stdout, or null when it is missing or fails. */
+/** Runs a tool with fixed arguments; returns trimmed stdout, or null if missing or failing. */
 function probe(cmd: string, args: string[], timeout = 15_000): string | null {
-  // `corepack` is a .cmd shim on Windows and needs a shell; the arguments here are constants, never user input.
+  // corepack is a .cmd shim on Windows and needs a shell; the arguments are constants.
   const r = spawnSync(cmd, args, { encoding: 'utf8', timeout, shell: isWin && cmd === 'corepack', windowsHide: true });
   return r.status === 0 ? r.stdout.trim() : null;
 }
@@ -26,7 +26,7 @@ function tool(version: string | null, ok: (v: string) => boolean, hint: string):
   return ok(version) ? { found: true, version, ok: true } : { found: true, version, ok: false, hint };
 }
 
-/** Free bytes on the drive that holds the app's build folder, or null when the OS cannot tell. */
+/** Free bytes on the build folder's drive, or null if unknown. */
 function freeBytes(): number | null {
   try {
     const s = statfsSync(buildsDir());
@@ -36,7 +36,7 @@ function freeBytes(): number | null {
   }
 }
 
-// Test seam, honored only by unpackaged builds: lets the e2e suite simulate a nearly full disk.
+// Test seam (unpackaged builds only): simulates a nearly full disk.
 const needBytes = () => (!app.isPackaged && Number(process.env.MIFS_MIN_FREE_BYTES)) || BUILD_NEEDS_BYTES;
 
 export function preflight(): Preflight {
@@ -64,7 +64,7 @@ export async function listTags(repo: string): Promise<string[]> {
 }
 
 function scriptPath(): string {
-  // Test seam, honored only by unpackaged builds: lets the e2e suite run a fast fake build.
+  // Test seam (unpackaged builds only): runs a fake build.
   if (!app.isPackaged && process.env.MIFS_BUILD_SCRIPT) return process.env.MIFS_BUILD_SCRIPT;
   return app.isPackaged ? join(process.resourcesPath, 'bundle/scripts/build-bundle.mjs') : resolve(app.getAppPath(), '../../bundle/scripts/build-bundle.mjs');
 }
@@ -129,7 +129,7 @@ export async function startBuild(
   };
 
   hooks.progress({ kind: 'build', label: 'Starting…', fraction: 0 });
-  // The system Node.js runs the script: it needs corepack, which Electron's embedded Node does not provide.
+  // Runs on the system Node.js; Electron's embedded Node has no corepack.
   const child = spawn('node', [scriptPath(), '--repo', repo, '--ref', ref, '--out', join(work, 'dist'), '--work', join(work, 'work')], {
     cwd: app.getPath('temp'),
     env: { ...process.env, COREPACK_ENABLE_DOWNLOAD_PROMPT: '0', CI: '1' },
@@ -159,14 +159,14 @@ export async function startBuild(
     clearInterval(timer);
     running = null;
     logStream.end();
-    // The clone with its node_modules is large; the finished bundle was already copied out.
+    // The clone is large; the finished bundle is already copied out.
     await rm(work, { recursive: true, force: true, maxRetries: 3 }).catch((e) => log.warn('could not clean build folder', e));
   }
 }
 
 /**
- * Removes build folders left behind by a run that was killed mid-build (the normal path cleans up after itself).
- * Safe at startup: the app is single-instance and builds only exist while one is running.
+ * Removes build folders left by a run killed mid-build. Safe at startup: the app is single-instance
+ * and builds only exist while it runs.
  */
 export async function sweepStaleBuilds(): Promise<number> {
   const dir = buildsDir();

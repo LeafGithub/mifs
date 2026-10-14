@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 import type { ToolStatus } from '../platform';
 import { useApp } from '../store';
 
-/** "Build from source" section of the loader step. Rendered only when the host can run builds. */
+/** "Build from source" section of the loader step. Only shown when the host can build. */
 export function BuildPanel() {
   const b = useApp((s) => s.build);
   const toggle = useApp((s) => s.toggleBuild);

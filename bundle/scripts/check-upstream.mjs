@@ -1,7 +1,7 @@
-// Finds official ModLoader releases that have no published bundle yet and starts the "Build ModLoader bundle" workflow for them.
+// Starts the "Build ModLoader bundle" workflow for official releases that have no bundle yet.
 //
 // Usage: node bundle/scripts/check-upstream.mjs [--dry-run] [--max 2] [--upstream <git url>]
-// Needs git and an authenticated `gh` (in CI: GH_TOKEN with actions:write). Run from a clone of the bundle repository.
+// Needs git and an authenticated `gh`. Run from a clone of the bundle repo.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -19,7 +19,7 @@ export const compareVersions = (a, b) => {
   return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
 };
 
-/** `git ls-remote --tags --refs` output -> plain x.y.z tag names (old `v1.0.6`-style and tool tags are ignored). */
+/** `git ls-remote --tags --refs` output -> x.y.z tag names (`v1.0.6`-style and tool tags are ignored). */
 export function parseUpstreamTags(lsRemote) {
   return lsRemote
     .split(/\r?\n/)
@@ -27,14 +27,14 @@ export function parseUpstreamTags(lsRemote) {
     .filter((t) => t && triple(t));
 }
 
-/** Release tag names of this repository -> versions of published *upstream* bundles (`loader-upstream-<version>-<sha7>`). */
+/** Release tag names -> versions of published upstream bundles (`loader-upstream-<version>-<sha7>`). */
 export function publishedUpstreamVersions(releaseTags) {
   return releaseTags.map((t) => /^loader-upstream-(\d+\.\d+\.\d+)-[0-9a-f]{7}$/.exec(t)?.[1]).filter(Boolean);
 }
 
 /**
- * Which upstream tags need a bundle: those newer than the newest published upstream bundle (oldest first, at most `max`,
- * keeping the newest ones). With nothing published yet, only the newest tag, so history is not rebuilt.
+ * Upstream tags that need a bundle: newer than the newest published one, oldest first, at most `max`.
+ * With none published, only the newest tag.
  */
 export function pickTags({ upstreamTags, publishedVersions, max = 2 }) {
   const tags = [...new Set(upstreamTags)].sort(compareVersions);

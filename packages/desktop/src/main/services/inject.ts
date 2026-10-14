@@ -6,7 +6,7 @@ import { loadBundle } from './bundles';
 import workerPath from './inject.worker?modulePath';
 import type { WorkerInput, WorkerMessage } from './inject.worker';
 
-/** Output locations the user picked through the save dialog. Inject refuses to write anywhere else. */
+/** Save-dialog locations. Inject refuses to write anywhere else. */
 export const allowedOutputs = new Set<string>();
 
 export async function runInject(req: InjectRequest, progress: (e: ProgressEvent) => void): Promise<InjectResult> {

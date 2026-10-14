@@ -1,5 +1,5 @@
-# Weekly: looks for official ModLoader releases that have no bundle yet and starts "Build ModLoader bundle" for them.
-# Forks are never built automatically; publish those by running "Build ModLoader bundle" by hand.
+# Weekly: finds official ModLoader releases without a bundle and starts "Build ModLoader bundle" for them.
+# Forks are never built automatically; run "Build ModLoader bundle" by hand for those.
 name: Check upstream for new releases
 run-name: Weekly upstream check
 

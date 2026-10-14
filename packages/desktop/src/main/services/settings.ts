@@ -9,7 +9,7 @@ export const DEFAULT_CATALOG_REPO = 'LeafGithub/mifs';
 
 interface Stored {
   catalogRepo?: string;
-  /** Access token encrypted with the OS keychain (DPAPI on Windows) and base64-encoded. */
+  /** Access token, encrypted with the OS keychain (DPAPI on Windows), base64-encoded. */
   tokenEnc?: string;
 }
 
@@ -33,14 +33,14 @@ export async function getCatalogRepo(): Promise<string> {
   return (await read()).catalogRepo ?? DEFAULT_CATALOG_REPO;
 }
 
-/** The decrypted token, for main-process use only. It is never sent to the renderer. */
+/** The decrypted token. Main process only, never sent to the renderer. */
 export async function getToken(): Promise<string | null> {
   const enc = (await read()).tokenEnc;
   if (!enc || !safeStorage.isEncryptionAvailable()) return null;
   try {
     return safeStorage.decryptString(Buffer.from(enc, 'base64'));
   } catch {
-    return null; // e.g. the OS profile changed; the user needs to enter it again
+    return null; // e.g. the OS profile changed; the token must be re-entered
   }
 }
 

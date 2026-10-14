@@ -128,7 +128,7 @@ export function BuildStep() {
   );
 }
 
-/** The crossing: a big readout, a mission clock, and the ship's progress along its line. */
+/** Big readout, clock, and progress along a line. */
 function Transit({ fraction, label }: { fraction: number | null; label: string }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {

@@ -1,4 +1,4 @@
-// Pure helpers for the bundle catalog (no Electron imports, so they are unit-testable).
+// Pure helpers for the bundle catalog (no Electron imports).
 import { unzipSync } from 'fflate';
 
 export interface RawCatalogEntry {
@@ -13,9 +13,9 @@ export interface RawCatalogEntry {
   prerelease: boolean;
   bundleAssetId: number;
   manifestAssetId: number;
-  /** sha256 of the bundle zip as recorded by GitHub when the asset was uploaded. */
+  /** sha256 of the bundle zip, as recorded by GitHub. */
   bundleSha256?: string;
-  /** What the bundle contains (see bundleFingerprint); absent in catalogs written before it existed. */
+  /** Content fingerprint (see bundleFingerprint); absent in older catalogs. */
   fingerprint?: string;
 }
 
@@ -33,7 +33,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object
 const str = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 const int = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0;
 
-/** Validates catalog.json (untrusted: anyone who can publish to the repo controls it). Invalid entries are dropped. */
+/** Validates catalog.json (untrusted). Drops invalid entries. */
 export function parseCatalog(json: unknown): RawCatalogEntry[] {
   if (!isObj(json) || json.schema !== 1 || !Array.isArray(json.bundles)) throw new Error('The catalog has an unexpected format.');
   const out: RawCatalogEntry[] = [];
@@ -69,8 +69,8 @@ const MAX_TOTAL = 400 * 1024 * 1024;
 const SAFE_ENTRY = /^[A-Za-z0-9._ +()-]+(\/[A-Za-z0-9._ +()-]+)*$/;
 
 /**
- * Unpacks a bundle zip into memory. Entry names must be plain relative paths (no `..`, no absolute or drive paths), and
- * the number and total size of entries are capped, so a hostile archive cannot write outside the target or exhaust memory.
+ * Unpacks a bundle zip into memory. Entry names must be plain relative paths, and entry count and total size
+ * are capped, so a hostile archive cannot escape the target or exhaust memory.
  */
 export function extractBundleZip(zip: Uint8Array): Map<string, Uint8Array> {
   let total = 0;
@@ -89,8 +89,8 @@ export function extractBundleZip(zip: Uint8Array): Map<string, Uint8Array> {
 }
 
 /**
- * True when the catalog's build is newer than the installed one. A republished bundle keeps its id (same loader version
- * and commit) but gets a new `builtAt`, so that timestamp is what tells an update apart. Unreadable dates never count.
+ * True when the catalog's build is newer than the installed one. A republished bundle keeps its id but gets
+ * a new `builtAt`. Unreadable dates never count.
  */
 export function isNewerBuild(installedBuiltAt: string | undefined, catalogBuiltAt: string): boolean {
   if (!installedBuiltAt) return false;
@@ -100,16 +100,16 @@ export function isNewerBuild(installedBuiltAt: string | undefined, catalogBuiltA
 }
 
 /**
- * Whether the catalog's copy is an update for an installed bundle: it must be a newer build, and not the same content.
- * The same content under a newer date is what a local build versus the CI build looks like, which is not worth a prompt.
- * When either fingerprint is missing (older catalogs or installs), the date alone decides.
+ * Whether the catalog's copy updates an installed bundle: a newer build with different content.
+ * Same content under a newer date is just a local build versus the CI build.
+ * If either fingerprint is missing, the date alone decides.
  */
 export function isUpdate(i: { installedBuiltAt?: string; catalogBuiltAt: string; installedFingerprint?: string; catalogFingerprint?: string }): boolean {
   if (!isNewerBuild(i.installedBuiltAt, i.catalogBuiltAt)) return false;
   return !(i.installedFingerprint && i.catalogFingerprint && i.installedFingerprint === i.catalogFingerprint);
 }
 
-/** Maps a GitHub API failure to something a person can act on. */
+/** Maps a GitHub API failure to an actionable message. */
 export function explainHttpError(status: number, hasToken: boolean, rateLimited: boolean): string {
   if (status === 401) return 'GitHub rejected the access token. Check it in the catalog settings.';
   if (status === 403 && rateLimited) return 'GitHub rate limit reached. Try again later, or add an access token in the catalog settings.';

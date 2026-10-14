@@ -1,4 +1,4 @@
-// Pure helpers for build-from-source (no Electron imports, so they are unit-testable).
+// Pure helpers for build-from-source (no Electron imports).
 
 export const UPSTREAM_REPO = 'https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoader.git';
 
@@ -12,19 +12,19 @@ export function normalizeRepo(repo: string): string {
   return `https://github.com/${m[1]}/${m[2]}.git`;
 }
 
-/** A tag, branch or commit. Rejects anything that could be read as a git option or a path escape. */
+/** A tag, branch or commit. Rejects anything that looks like a git option or path escape. */
 export function normalizeRef(ref: string): string {
   const r = ref.trim();
   if (!REF_RE.test(r) || r.includes('..') || r.endsWith('/') || r.endsWith('.lock')) throw new Error('That tag or branch name is not valid.');
   return r;
 }
 
-/** A build peaked at about 3.9 GB in measurements; keep a margin. */
+/** Builds peaked at about 3.9 GB; keep a margin. */
 export const BUILD_NEEDS_BYTES = 5 * 1024 ** 3;
 
 const gb = (n: number) => `${(n / 1024 ** 3).toFixed(n >= 10 * 1024 ** 3 ? 0 : 1)} GB`;
 
-/** Free-space check shown next to git/node/corepack. `free === null` means the OS could not tell, which never blocks a build. */
+/** Free-space check shown next to git/node/corepack. `free === null` (unknown) never blocks a build. */
 export function diskStatus(free: number | null, need = BUILD_NEEDS_BYTES): { found: boolean; version?: string; ok: boolean; hint?: string } {
   if (free === null) return { found: true, version: 'unknown', ok: true };
   if (free >= need) return { found: true, version: `${gb(free)} free`, ok: true };
@@ -73,7 +73,7 @@ export function parseMark(line: string): Mark | null {
   }
 }
 
-/** Turns the end of the build output into something readable: a known cause when recognizable, no stack traces. */
+/** Turns the end of the build output into a readable message: a known cause if recognized, no stack traces. */
 export function failureMessage(code: number | null, tail: string[], logFile: string): string {
   const text = tail.join('\n');
   let known: string | null = null;

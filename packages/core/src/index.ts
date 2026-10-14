@@ -8,7 +8,7 @@ export { isPatched, patchSc2, type PatchOptions } from './patchSc2.ts';
 
 export interface BuildOptions extends InjectOptions, PatchOptions {}
 
-/** Full pipeline: patch SugarCube to wait for ModLoader, then embed ModLoader and the mods. */
+/** Patches SugarCube to wait for ModLoader, then embeds ModLoader and the mods. */
 export function buildModHtml(html: string, options: BuildOptions): InjectResult {
   const patched = isPatched(html) ? html : patchSc2(html, options);
   return injectMods(patched, options);

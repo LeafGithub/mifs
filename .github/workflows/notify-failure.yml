@@ -1,5 +1,5 @@
-# Turns failed bundle builds and failed weekly checks into a GitHub issue (which e-mails the repository owner),
-# and closes that issue again when the same job succeeds. One issue per distinct run title; repeats become comments.
+# Opens a GitHub issue (which e-mails the owner) for failed bundle builds and weekly checks, and closes it
+# when the same job succeeds. One issue per run title; repeats become comments.
 name: Notify on CI failure
 
 on:
@@ -27,7 +27,7 @@ jobs:
       - name: Open, update or close the issue
         env:
           GH_TOKEN: ${{ github.token }}
-          # passed through the environment, never interpolated into the script: run titles contain user-supplied inputs
+          # passed via the environment, not interpolated: run titles contain user input
           RUN_TITLE: ${{ github.event.workflow_run.display_title }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}

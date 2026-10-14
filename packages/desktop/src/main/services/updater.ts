@@ -6,7 +6,7 @@ import { AppError } from '../ipc';
 
 const REPO = 'LeafGithub/mifs';
 
-// The portable build is a single self-extracting exe: it cannot replace itself, so it only points to the release page.
+// The portable build is a self-extracting exe and cannot replace itself; it links to the release page.
 const portable = Boolean(process.env.PORTABLE_EXECUTABLE_FILE);
 
 let state: AppUpdate = { state: app.isPackaged ? 'idle' : 'unsupported', current: app.getVersion(), selfUpdate: !portable };
@@ -23,7 +23,7 @@ export const getUpdate = (): AppUpdate => state;
 export function initUpdater(onChange: (u: AppUpdate) => void) {
   notify = onChange;
   if (!app.isPackaged) return;
-  // Set explicitly because the portable build ships no app-update.yml; the installed build would read the same from its own.
+  // Set explicitly: the portable build has no app-update.yml.
   autoUpdater.setFeedURL({ provider: 'github', owner: REPO.split('/')[0]!, repo: REPO.split('/')[1]! });
   autoUpdater.logger = log;
   autoUpdater.autoDownload = false;
@@ -31,7 +31,7 @@ export function initUpdater(onChange: (u: AppUpdate) => void) {
   autoUpdater.allowPrerelease = false;
   autoUpdater.on('download-progress', (p) => set({ state: 'downloading', fraction: p.percent / 100 }));
   autoUpdater.on('update-downloaded', () => set({ state: 'ready', fraction: 1 }));
-  // Checking quietly in the background: wait until the window is up and the app has finished starting.
+  // Quiet background check, after the window is up.
   setTimeout(() => void checkUpdate(), 8000);
 }
 
@@ -43,7 +43,7 @@ export async function checkUpdate(): Promise<AppUpdate> {
     const latest = r?.updateInfo.version;
     return set(r?.isUpdateAvailable && latest ? { state: 'available', latest } : { state: 'none', latest: undefined });
   } catch (e) {
-    // Includes the repository being private (404) and being offline; neither deserves a scary message.
+    // Includes a private repo (404) and being offline; neither needs an alarming message.
     log.warn('[update] check failed', e);
     return set({ state: 'error', error: 'Could not check for updates.' });
   }

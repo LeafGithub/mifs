@@ -7,7 +7,7 @@ export interface BundleInfo {
   origin: 'local' | 'catalog';
 }
 
-/** A game HTML the user picked or downloaded. The renderer only ever sees this handle, never the file contents. */
+/** A game HTML the user picked or downloaded. The renderer sees only this handle, never the contents. */
 export interface GameFile {
   id: string;
   /** Display name, e.g. `Degrees of Lewdity.html` or `DoL Plus v0.778`. */
@@ -92,7 +92,7 @@ export interface Preflight {
   git: ToolStatus;
   node: ToolStatus;
   corepack: ToolStatus;
-  /** Free space where builds are made (a build needs several GB while it runs). */
+  /** Free space where builds run (several GB needed). */
   disk: ToolStatus;
   ok: boolean;
 }
@@ -104,7 +104,7 @@ export interface BuildRequest {
   ref: string;
 }
 
-/** State of the app's own update check. `unsupported` means this build cannot check (a development run). */
+/** State of the app's update check. `unsupported` means this build cannot check (dev run). */
 export interface AppUpdate {
   state: 'unsupported' | 'idle' | 'checking' | 'none' | 'available' | 'downloading' | 'ready' | 'error';
   /** Version of the running app. */
@@ -113,13 +113,13 @@ export interface AppUpdate {
   latest?: string;
   /** 0..1 while downloading. */
   fraction?: number;
-  /** The installed (setup) build updates itself; the portable one can only point to the release page. */
+  /** Setup builds update themselves; portable ones link to the release page. */
   selfUpdate: boolean;
   /** Why the last check or download failed. */
   error?: string;
 }
 
-/** Everything the UI needs from its host. Desktop implements it over IPC, the web app in the browser. */
+/** What the UI needs from its host. Desktop implements it over IPC. */
 export interface Platform {
   bundles: {
     list(): Promise<BundleInfo[]>;
@@ -153,7 +153,7 @@ export interface Platform {
     /** `token: null` removes the stored token; leaving it out keeps it. */
     saveSettings(patch: { repo?: string; token?: string | null }): Promise<CatalogSettings>;
   };
-  /** Building a loader bundle from source. Absent on hosts that cannot run builds (the web app). */
+  /** Building a bundle from source. Absent on hosts that cannot build. */
   build?: {
     preflight(): Promise<Preflight>;
     /** Release-style tags (x.y.z) of the repository, newest first. */
@@ -164,7 +164,7 @@ export interface Platform {
     /** Subscribes to raw build output lines. */
     onLog(listener: (lines: string[]) => void): () => void;
   };
-  /** Updating the app itself. Absent on hosts that update by other means (the web app). */
+  /** Updating the app. Absent on hosts that update otherwise. */
   update?: {
     get(): Promise<AppUpdate>;
     check(): Promise<AppUpdate>;
@@ -178,7 +178,7 @@ export interface Platform {
   onProgress(listener: (event: ProgressEvent) => void): () => void;
 }
 
-/** Failure with a stable `code` the UI can switch on (host errors are mapped to this). */
+/** Failure with a stable `code` the UI can switch on. */
 export class PlatformError extends Error {
   readonly code: string;
   constructor(code: string, message: string) {

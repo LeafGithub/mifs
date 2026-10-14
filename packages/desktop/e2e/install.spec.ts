@@ -1,5 +1,5 @@
-// Drives the real Electron app (built into out/). Native dialogs are stubbed from the main process, which is what a
-// user's clicks in them would return; everything else (IPC, services, worker thread) is the production code path.
+// Drives the real Electron app (built into out/). Native dialogs are stubbed from the main process;
+// everything else (IPC, services, worker thread) is the production code path.
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -132,8 +132,8 @@ test('rejects a folder that is not a bundle', async () => {
   await expect(page.getByRole('alert')).toContainText('manifest.json');
 });
 
-// Build from source, with the build script replaced by e2e/fake-build.mjs (the real one needs ~10 minutes and network).
-// Preflight is real: it needs git, node and corepack on this machine. Not run against a packaged exe (the seam is dev-only).
+// Build from source with e2e/fake-build.mjs instead of the real script (slow, needs network).
+// Preflight is real and needs git, node and corepack. Skipped for packaged exes (the seam is dev-only).
 const fake = { MIFS_BUILD_SCRIPT: resolve(here, 'fake-build.mjs'), MIFS_FAKE_BUNDLE: BUNDLE };
 
 async function openBuildPanel(page: import('@playwright/test').Page) {
@@ -212,18 +212,18 @@ test.describe('build from source', () => {
   });
 });
 
-// Catalog: a fake private GitHub (the catalog and its assets 404 without the right token), serving a real built bundle.
+// Catalog: a fake private GitHub (404 without the right token) serving a real bundle.
 const TOKEN = 'test-token-123';
 
 type Manifest = { id: string; kind: string; loader: { version: string; ref: string; commit: string; builtAt: string }; mods: { id: string; version: string; commit?: string; path: string }[]; licenses: string[] };
 
-/** Same text as canonicalContent in bundle/scripts/fingerprint.mjs (that file and the core library are tested against each other). */
+/** Same text as canonicalContent in bundle/scripts/fingerprint.mjs. */
 const fingerprint = (m: Manifest): string =>
   createHash('sha256')
     .update([m.loader.version, m.loader.commit, ...m.mods.map((x) => `${x.id}@${x.version}@${x.commit ?? ''}`).sort()].join('\n'))
     .digest('hex');
 
-/** The same bundle republished: a new builtAt inside its manifest and, optionally, one mod removed (different content). */
+/** The same bundle republished with a new builtAt and, optionally, one mod removed. */
 function republished(zip: Buffer, builtAt: string, dropModId?: string): { zip: Buffer; manifest: Manifest } {
   const files = unzipSync(new Uint8Array(zip));
   const manifest: Manifest = JSON.parse(new TextDecoder().decode(files['manifest.json']));
@@ -242,7 +242,7 @@ function republished(zip: Buffer, builtAt: string, dropModId?: string): { zip: B
 function startFakeGitHub(opts: { badHash?: boolean; slowUnauthorized?: boolean } = {}): Promise<{ server: Server; base: string; requests: string[]; republish(builtAt: string, dropModId?: string): void }> {
   const original: Manifest = JSON.parse(readFileSync(join(BUNDLE, 'manifest.json'), 'utf8'));
   const originalZip = readFileSync(join(BUNDLE, readdirSync(BUNDLE).find((f) => /^modloader-bundle-.*\.zip$/.test(f))!));
-  // what the catalog currently publishes; republish() changes it, like a new CI run replacing the release assets
+  // what the catalog publishes; republish() changes it like a new CI run
   const state: { zip: Buffer; manifest: Manifest } = { zip: originalZip, manifest: original };
   const catalog = () => ({
     schema: 1,
@@ -261,7 +261,7 @@ function startFakeGitHub(opts: { badHash?: boolean; slowUnauthorized?: boolean }
     requests.push(`${req.method} ${req.url} auth=${req.headers.authorization ? 'yes' : 'no'}`);
     const send = (code: number, body: string | Buffer, type = 'application/json') => (res.writeHead(code, { 'content-type': type, 'content-length': Buffer.byteLength(body) }), res.end(body));
     if (req.headers.authorization !== `Bearer ${TOKEN}`) {
-      // what GitHub says about private repos (optionally slowly, to make the startup load finish after a token is saved)
+      // GitHub's answer for private repos (optionally slow, so the startup load ends after a token is saved)
       if (opts.slowUnauthorized) setTimeout(() => send(404, '{"message":"Not Found"}'), 1500);
       else send(404, '{"message":"Not Found"}');
       return;
@@ -304,7 +304,7 @@ test.describe('bundle catalog', () => {
     await expect(page.getByText('selected', { exact: true })).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText('You have every published bundle.')).toBeVisible();
 
-    // the token reached GitHub as a Bearer header, was never exposed to the page, and is not stored in plain text
+    // token sent as a Bearer header, never exposed to the page, not stored in plain text
     expect(gh.requests.some((r) => r.includes('assets/2') && r.endsWith('auth=yes'))).toBe(true);
     expect(await page.evaluate(() => window.api.catalog!.getSettings())).toEqual({ repo: 'o/r', hasToken: true });
     const dataDir = join(tmp, `userdata-${launches}`);

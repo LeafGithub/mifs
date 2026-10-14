@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AppUpdate, Platform } from '../platform';
 
-/** App version plus the self-update flow, at the foot of the rail. Renders nothing on hosts without updates. */
+/** App version and self-update flow. Renders nothing on hosts without updates. */
 export function UpdateNotice({ platform }: { platform: Platform }) {
   const api = platform.update;
   const [u, setU] = useState<AppUpdate | null>(null);

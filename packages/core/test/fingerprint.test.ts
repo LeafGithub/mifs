@@ -35,7 +35,7 @@ describe('bundleFingerprint', () => {
   });
 });
 
-// The catalog script (plain JS, runs in CI) and the app (TypeScript) must compute the same value for the same manifest.
+// The CI catalog script and the app must compute the same value for the same manifest.
 const here = dirname(fileURLToPath(import.meta.url));
 const DIST = process.env.MIFS_BUNDLE ?? resolve(here, '../../../bundle/dist');
 describe.skipIf(!existsSync(join(DIST, 'manifest.json')))('agreement with bundle/scripts/fingerprint.mjs', () => {

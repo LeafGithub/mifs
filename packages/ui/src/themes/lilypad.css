@@ -71,7 +71,7 @@
   --theme-font-mono: 'Nunito', 'Segoe UI', system-ui, sans-serif;
 }
 
-/* The components were drawn for a technical HUD (uppercase, wide tracking, mono). Relax that for a friendlier voice. */
+/* The components assume a HUD look (uppercase, wide tracking, mono); relax it. */
 [data-theme^='lilypad'] .uppercase { text-transform: none; }
 [data-theme^='lilypad'] [class*='tracking-'] { letter-spacing: 0; }
 [data-theme^='lilypad'] .font-mono { font-size: 13px; font-weight: 700; }
@@ -107,11 +107,11 @@
 [data-theme^='lilypad'] .bracket::before,
 [data-theme^='lilypad'] .bracket::after { display: none; }
 
-/* --- Revision: states and surfaces the first pass missed --- */
+/* --- More states and surfaces --- */
 /* Disabled controls stay legible: a dashed, tinted pill instead of a faded one. */
 [data-theme^='lilypad'] button.rounded-sm:disabled { opacity: 1; background: transparent; color: var(--muted-foreground); border: 2px dashed var(--input); }
 [data-theme^='lilypad'] button.rounded-sm.border-transparent:disabled { background: transparent; border-color: transparent; opacity: 0.6; }
-/* Selected cards and active rail dots read from the deeper outline; pastel fills alone are too faint on cream. */
+/* Selected cards and active rail dots use the deeper outline; pastel fills are too faint on cream. */
 [data-theme^='lilypad'] .border-primary { border-color: var(--input); }
 [data-theme^='lilypad'] .bg-accent\/80 { background-color: var(--accent); }
 /* Hard-coded dark inset (the output path) becomes a soft tinted well. */
@@ -128,16 +128,16 @@
 [data-theme^='lilypad'] * { scrollbar-width: thin; scrollbar-color: var(--input) transparent; }
 [data-theme^='lilypad'] select { background-color: var(--card); }
 
-/* --- Critique pass: clarity, type floor, states --- */
+/* --- Clarity, type floor, states --- */
 /* Type floor: nothing under 12px; paths read as text, not as bold telemetry. */
 [data-theme^='lilypad'] dt { font-size: 12px; font-weight: 700; }
 [data-theme^='lilypad'] dd.font-mono { font-size: 14px; font-weight: 500; }
 [data-theme^='lilypad'] .font-mono.text-\[11px\],
 [data-theme^='lilypad'] .font-mono.text-\[11\.5px\] { font-size: 13px; }
 [data-theme^='lilypad'] p.font-mono.break-all { font-weight: 500; }
-/* Unselected rail steps keep a readable contrast; the alpha dropped them to about 3:1. */
+/* Unselected rail steps keep readable contrast (the alpha gave about 3:1). */
 [data-theme^='lilypad'] .text-muted-foreground\/70 { color: var(--muted-foreground); }
-/* Alerts and fields follow the same shape language as everything else. */
+/* Alerts and fields share the same shapes. */
 [data-theme^='lilypad'] p[role='alert'],
 [data-theme^='lilypad'] p[role='status'] { border-radius: 1.25rem; border-width: 2px; }
 [data-theme^='lilypad'] input:not([type='checkbox']):not([type='radio']),

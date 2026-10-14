@@ -22,7 +22,7 @@ export interface BuildState {
   tag: string;
   repo: string;
   ref: string;
-  /** The user confirmed that building runs code from a repository that is not the official one. */
+  /** The user confirmed that building runs code from an unofficial repository. */
   trusted: boolean;
   status: 'idle' | 'running' | 'done' | 'error';
   progress: ProgressEvent | null;
@@ -49,7 +49,7 @@ const idleBuild: BuildState = {
 export interface CatalogState {
   list: CatalogList | null;
   loading: boolean;
-  /** Why the list could not be loaded (shown as a quiet notice: it is expected while the repository is private). */
+  /** Why the list could not load (quiet notice; expected while the repo is private). */
   error: string | null;
   /** A download or settings change that failed (shown as an alert). */
   actionError: string | null;
@@ -121,8 +121,8 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
   const store = createStore<AppState>((set, get) => {
     const currentManifest = () => get().bundles.find((b) => b.id === get().bundleId)?.manifest ?? null;
 
-    // Only the newest catalog load may update the state: an older, slower one (say, started before a token was saved)
-    // must not overwrite its result.
+    // Only the newest catalog load may update state; an older, slower one
+    // (e.g. started before a token was saved) must not overwrite it.
     let catalogSeq = 0;
 
     platform.build?.onLog((lines) => set((s) => ({ build: { ...s.build, logs: [...s.build.logs, ...lines].slice(-400) } })));

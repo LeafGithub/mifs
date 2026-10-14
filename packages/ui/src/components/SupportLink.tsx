@@ -2,7 +2,7 @@ import { cn } from '../lib/utils';
 
 export const KOFI_URL = 'https://ko-fi.com/d4ehs';
 
-/** Ko-fi brand symbol (kofi_brandasset/kofi_symbol.svg), unaltered, inlined so no asset loading or CSP rules are involved. */
+/** Ko-fi brand symbol (kofi_brandasset/kofi_symbol.svg), unaltered and inlined. */
 function KofiSymbol({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 241 194" aria-hidden className={className}>

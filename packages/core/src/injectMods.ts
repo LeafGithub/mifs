@@ -17,8 +17,8 @@ export interface InjectResult {
 }
 
 /**
- * Embeds the ModLoader payload and mod zips before the first <script> of the game HTML (and relaxes its CSP so
- * mods can load remote resources). String-based equivalent of ModLoader's `insert2html.js`.
+ * Embeds the ModLoader payload and mod zips before the first <script> and relaxes the CSP so mods can load
+ * remote resources. String-based equivalent of ModLoader's `insert2html.js`.
  */
 export function injectMods(html: string, options: InjectOptions): InjectResult {
   if (html.includes('window.modDataValueZipList')) {
@@ -31,7 +31,7 @@ export function injectMods(html: string, options: InjectOptions): InjectResult {
   let withCsp = html;
   const cspAt = html.indexOf(CSP_FIND);
   if (cspAt === -1) warnings.push('CSP meta tag not found; left unchanged');
-  // CSP is in <head>, before the first <script>, so the insertion index is still valid after replacing in place.
+  // The CSP sits before the first <script>, so the insertion index stays valid.
   else withCsp = html.slice(0, cspAt) + CSP_REPLACE + html.slice(cspAt + CSP_FIND.length);
   const shift = withCsp.length - html.length;
 

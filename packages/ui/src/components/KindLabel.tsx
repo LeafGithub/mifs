@@ -1,4 +1,4 @@
-/** A bundle's origin in the active theme's voice: upstream/fork for HUD themes, official/community fork for friendly ones. */
+/** A bundle's origin: upstream/fork in HUD themes, official/community fork in friendly ones. */
 export const KIND_HELP = 'A community fork is a copy of ModLoader maintained by someone other than its original author.';
 
 export function KindLabel({ kind }: { kind: string }) {

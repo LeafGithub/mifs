@@ -9,7 +9,7 @@
 @import '@fontsource/nunito/700.css';
 @import '@fontsource/nunito/800.css';
 
-/* Each theme is a block of variables in themes/<id>.css, scoped to [data-theme='<id>'] (see themes.ts). */
+/* Each theme is a block of variables in themes/<id>.css scoped to [data-theme='<id>'] (see themes.tsx). */
 @import './themes/interstellar.css';
 @import './themes/lilypad.css';
 
@@ -57,7 +57,7 @@
     outline: 2px solid var(--ring);
     outline-offset: 3px;
   }
-  /* Browser surfaces the design didn't draw: native controls, selection and scrollbars take the palette. */
+  /* Native controls, selection and scrollbars take the palette. */
   input[type='checkbox'],
   input[type='radio'] {
     accent-color: var(--primary);
@@ -72,7 +72,7 @@
   }
 }
 
-/* Wording and glyphs that differ by theme voice: HUD themes show .hud-only, friendly themes show .friendly-only. */
+/* Per-theme wording: HUD themes show .hud-only, friendly themes show .friendly-only. */
 .friendly-only { display: none; }
 [data-theme^='lilypad'] .hud-only { display: none; }
 [data-theme^='lilypad'] .friendly-only { display: inline; }

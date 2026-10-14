@@ -9,7 +9,7 @@ import { importBundleFrom, listBundles } from './bundles';
 import { explainHttpError, extractBundleZip, isUpdate, parseCatalog, type RawCatalogEntry } from './catalog-utils';
 import { getCatalogRepo, getToken } from './settings';
 
-// Test seam, honored only by unpackaged builds: lets the e2e suite talk to a fake GitHub.
+// Test seam (unpackaged builds only): points the e2e suite at a fake GitHub.
 const apiBase = () => (!app.isPackaged && process.env.MIFS_API_BASE) || 'https://api.github.com';
 
 async function request(path: string, token: string | null, accept: string): Promise<Response> {
@@ -63,7 +63,7 @@ export async function listCatalog(): Promise<CatalogList> {
 export async function installFromCatalog(id: string, progress: (e: ProgressEvent) => void): Promise<BundleInfo> {
   const repo = await getCatalogRepo();
   const token = await getToken();
-  // Look the entry up again on the server side: the renderer only names an id, never a URL or asset.
+  // Look the entry up again here: the renderer only sends an id, never a URL or asset.
   const entry = (await fetchEntries(repo, token)).find((e) => e.id === id);
   if (!entry) throw new AppError('NOT_FOUND', 'That bundle is no longer in the catalog.');
 
@@ -105,7 +105,7 @@ export async function installFromCatalog(id: string, progress: (e: ProgressEvent
       await mkdir(dirname(to), { recursive: true });
       await writeFile(to, data);
     }
-    // importBundleFrom re-checks every file against the manifest's sizes and sha256 before installing anything.
+    // importBundleFrom re-checks every file's size and sha256 before installing.
     const info = await importBundleFrom(work, progress);
     if (info.id !== entry.id) throw new AppError('ID_MISMATCH', 'The bundle does not match the catalog entry, so it was not installed.');
     return info;

@@ -15,7 +15,7 @@ const mod = (id: string, version: string, size: number, deps: string[] = [], ext
   ...extra,
 });
 
-/** A believable bundle for UI development and demos (no real files behind it). */
+/** A fake bundle for UI development (no real files). */
 export const MOCK_BUNDLE: BundleInfo = {
   id: 'upstream-2.101.1-17c16d9',
   origin: 'local',
@@ -47,7 +47,7 @@ export const MOCK_ADAPTERS: GameAdapter[] = [
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const CATALOG_BUILT_AT = '2026-10-10T11:03:00Z';
 
-/** In-memory Platform: lets the UI run in a plain browser and keeps it testable without Electron. */
+/** In-memory Platform for running and testing the UI without Electron. */
 export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: number } = {}): Platform {
   const delay = opts.delay ?? 400;
   const listeners = new Set<(e: ProgressEvent) => void>();
@@ -110,7 +110,7 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
         });
         return {
           source: 'LeafGithub/mifs',
-          // The demo bundle was built earlier than the catalog's copy of the same id, so it shows as updatable.
+          // The demo bundle predates the catalog's copy, so it shows as updatable.
           entries: [entry('upstream-2.101.1-17c16d9', '2.101.1', 'upstream', CATALOG_BUILT_AT), entry('maplebirchleaf-2.102.0-aae1d5d', '2.102.0', 'fork', '2026-10-08T12:00:00Z')],
         };
       },

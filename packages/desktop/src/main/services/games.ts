@@ -15,7 +15,7 @@ interface AdapterDef extends GameAdapter {
   assetName: string;
 }
 
-// Hosts a release asset may be downloaded from; the release JSON is untrusted input.
+// Hosts a release asset may come from (the release JSON is untrusted).
 const ALLOWED_HOSTS = ['gitgud.io', 'dolp.download'];
 
 const ADAPTERS: AdapterDef[] = [
@@ -25,10 +25,10 @@ const ADAPTERS: AdapterDef[] = [
 
 export const listAdapters = (): GameAdapter[] => ADAPTERS.map(({ id, name, description }) => ({ id, name, description }));
 
-/** Files the renderer may refer to, by opaque id. The renderer never sees or supplies paths for games. */
+/** Files the renderer refers to by opaque id; it never sees or supplies game paths. */
 const registry = new Map<string, { path: string; name: string; size: number; originDir?: string }>();
 
-/** `originDir` is the folder the user's own file came from; downloads and unpacked copies have none. */
+/** `originDir` is the folder of the user's own file; downloads have none. */
 async function register(path: string, name: string, source: GameFile['source'], originDir?: string): Promise<GameFile> {
   const id = randomUUID();
   const size = (await stat(path)).size;
@@ -36,7 +36,7 @@ async function register(path: string, name: string, source: GameFile['source'], 
   return { id, name, size, source };
 }
 
-/** Folder to offer when saving the result: next to the file the user picked, so the page sits beside the game's image folders. */
+/** Folder to offer when saving: next to the picked file, beside the game's image folders. */
 export const gameOriginDir = (id: string): string | undefined => registry.get(id)?.originDir;
 
 export function gamePath(id: string): string {

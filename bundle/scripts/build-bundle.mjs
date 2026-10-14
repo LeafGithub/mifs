@@ -1,9 +1,9 @@
-// Build a ModLoader "bundle": BeforeSC2.js + every mod zip + licenses + manifest.json, ready to publish.
+// Builds a ModLoader bundle: BeforeSC2.js, mod zips, licenses, manifest.json.
 //
-// Usage: node scripts/build-bundle.mjs --repo <git url> --ref <tag|branch|commit> [--out dist] [--work work] [--src <existing built checkout>]
-//   --src    skip clone + build and package an already built checkout (e.g. modloader-lab/work/modloader-src)
+// Usage: node scripts/build-bundle.mjs --repo <git url> --ref <tag|branch|commit> [--out dist] [--work work] [--src <built checkout>]
+//   --src  skip clone and build, package an existing checkout
 //
-// Needs: git, Node 18+, corepack (yarn is pinned per project through "packageManager").
+// Needs git, Node 18+ and corepack.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { parseModList, resolveMods } from './modlist.mjs';
 
-// Fail with one readable line instead of a stack trace; the desktop app shows the last lines of output to the user.
+// One readable line instead of a stack trace; the app shows the last output lines.
 process.on('uncaughtException', (e) => {
   console.error('error: ' + (e instanceof Error ? e.message : String(e)));
   process.exit(1);
@@ -26,7 +26,7 @@ const { values: args } = parseArgs({
 const UPSTREAM = 'https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoader.git';
 const repo = args.repo ?? UPSTREAM;
 const OUT = resolve(args.out);
-// mods.json: a fallback list plus extras per kind of source. Each ref is built with its own modList.json (see modlist.mjs).
+// mods.json: fallback list plus extras per source kind. A ref's own modList.json wins (see modlist.mjs).
 const cfg = JSON.parse(readFileSync(join(HERE, '../mods.json'), 'utf8'));
 const kindOf = (url) => (/github\.com[/:]([^/]+)\//.exec(url)?.[1]?.toLowerCase() === 'lyoko-jeremie' ? 'upstream' : 'fork');
 
@@ -40,14 +40,14 @@ function run(cmd, a, cwd, { capture = false } = {}) {
 }
 const yarn = (a, cwd) => run('corepack', ['yarn', ...a], cwd);
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
-// Machine-readable progress for the desktop app (one JSON object per line, prefixed so it cannot be confused with tool output).
+// Progress lines for the desktop app: one prefixed JSON object per line.
 const mark = (label, fraction) => console.log('##mifs ' + JSON.stringify({ label, fraction }));
 const git = (a, cwd = SRC) => run('git', a, cwd, { capture: true });
 
 let SRC;
 let mods = [];
 let modListInfo = { source: 'fallback', extras: [] };
-/** Decides which mods to build and embed, from the checkout's own modList.json. */
+/** Picks the mods to build from the checkout's modList.json. */
 function chooseMods(sourceUrl) {
   const listPath = join(SRC, 'modList.json');
   let refList = null;
@@ -64,7 +64,7 @@ function chooseMods(sourceUrl) {
   modListInfo = { source: r.source, extras: r.extras };
 }
 
-// ---- 1. source checkout + build ------------------------------------------------------------------------------
+// 1. source checkout + build
 if (args.src) {
   SRC = resolve(args.src);
   chooseMods(git(['remote', 'get-url', 'origin']) || UPSTREAM);
@@ -84,7 +84,7 @@ if (args.src) {
     yarn(['run', s], SRC);
   }
 
-  // ModLoaderGui compiles against ModSubUiAngularJs's build output, so that one goes first (as in upstream CI).
+  // ModLoaderGui needs ModSubUiAngularJs built first.
   const dirs = [...new Set(mods.map((m) => m.split('/')[0]))].sort((a, b) => Number(b === 'ModSubUiAngularJs') - Number(a === 'ModSubUiAngularJs'));
   for (const [i, d] of dirs.entries()) {
     mark('Building mod ' + d + ' (' + (i + 1) + '/' + dirs.length + ')', 0.2 + (0.75 * i) / dirs.length);
@@ -101,7 +101,7 @@ if (args.src) {
 }
 
 mark('Collecting files', 0.96);
-// ---- 2. collect -----------------------------------------------------------------------------------------------
+// 2. collect
 const commit = git(['rev-parse', 'HEAD']);
 const remoteUrl = args.repo ?? (git(['remote', 'get-url', 'origin']) || UPSTREAM);
 const ref = args.ref ?? git(['describe', '--tags', '--always']);
@@ -164,7 +164,7 @@ const manifest = {
 };
 writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 
-// ---- 3. zip everything (manifest.json is also published next to the zip so clients can read it cheaply) ----------
+// 3. zip everything (manifest.json is also published beside the zip)
 mark('Packaging', 0.98);
 const JSZip = createRequire(join(SRC, 'package.json'))('jszip');
 const zip = new JSZip();

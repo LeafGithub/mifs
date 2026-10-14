@@ -18,5 +18,5 @@ export const buildsDir = () => dir('builds');
 /** One log file per build, kept for troubleshooting. */
 export const logsDir = () => dir('logs');
 
-/** Ids and tags become folder names, so they must not be able to escape their parent folder. */
+/** Ids and tags become folder names and must not escape their parent folder. */
 export const SAFE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;

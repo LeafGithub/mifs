@@ -39,7 +39,7 @@ export function BundleStep() {
   const installing = useApp((s) => s.catalog.installing);
   const update = useApp((s) => s.installFromCatalog);
 
-  // The newest official bundle is the one to suggest: most people should not have to weigh versions or forks.
+  // Suggest the newest official bundle so most people need not weigh versions or forks.
   const recommendedId = bundles
     .filter((b) => b.manifest.kind !== 'fork')
     .sort((a, b) => b.manifest.loader.builtAt.localeCompare(a.manifest.loader.builtAt))[0]?.id;

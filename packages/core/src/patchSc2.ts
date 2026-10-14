@@ -6,7 +6,7 @@ const START_HEAD_OLD = 'window.SugarCube={},jQuery((()=>{';
 const START_HEAD_NEW = 'window.SugarCube={},window.mainStart=((()=>{';
 
 const START_TAIL_OLD = '}))})(window,window.document,jQuery);';
-// SugarCube starts only after ModLoader finished loading (or immediately when no ModLoader is present).
+// SugarCube starts after ModLoader finishes loading, or immediately when there is none.
 const START_TAIL_NEW = `}))
 // inject ModLoader on there
 if (typeof window.modSC2DataManager !== 'undefined') {
@@ -16,8 +16,8 @@ window.modSC2DataManager.startInit().then(() => window.jsPreloader.startLoad()).
 
 export interface PatchOptions {
   /**
-   * Body of `window.initI10n = (l10nStrings) => { ... }`. The patched start code calls `initI10n`, so it must exist;
-   * games without their own localization hook (DoL Plus, DoL X-Change) use the empty default.
+   * Body of `window.initI10n = (l10nStrings) => { ... }`. The patched start code calls it, so it must exist.
+   * Games without a localization hook (DoL Plus, DoL X-Change) use the empty default.
    */
   i10n?: string;
 }
@@ -28,7 +28,7 @@ export function isPatched(html: string): boolean {
 
 /**
  * Makes SugarCube 2 wait for `window.modSC2DataManager.startInit()` before starting the story.
- * String-based equivalent of ModLoader's `sc2PatchTool.js` (which goes through cheerio) that works in any JS runtime.
+ * String-based equivalent of ModLoader's `sc2PatchTool.js` (which uses cheerio); works in any JS runtime.
  */
 export function patchSc2(html: string, options: PatchOptions = {}): string {
   const first = html.indexOf(SC2_ID);
@@ -51,7 +51,7 @@ export function patchSc2(html: string, options: PatchOptions = {}): string {
   if (!body.includes(START_TAIL_OLD)) {
     throw new InjectError('ANCHOR_TAIL_MISSING', `SugarCube start code not recognized (missing "${START_TAIL_OLD}")`);
   }
-  // function replacers: replacement text contains `$`-free code today, but keep it safe from `$&`-style patterns
+  // function replacers, so `$&`-style patterns in the text are not expanded
   const newBody = body.replaceAll(START_HEAD_OLD, () => START_HEAD_NEW).replaceAll(START_TAIL_OLD, () => START_TAIL_NEW);
 
   const i10nTag = `\n<script id="i10n-sc2patch" type="text/javascript">\n    window.initI10n = (l10nStrings)=>{\n        ${options.i10n ?? ''}\n    };\n</script>\n        `;

@@ -1,5 +1,5 @@
-// Stand-in for bundle/scripts/build-bundle.mjs in e2e tests: same arguments and output conventions, no network or compiler.
-// MIFS_FAKE_BUNDLE = folder to "build"; MIFS_FAKE_HANG=1 = never finish (to test cancel); MIFS_FAKE_FAIL=1 = exit with an error.
+// Stand-in for bundle/scripts/build-bundle.mjs in e2e tests: same arguments and output, no network or compiler.
+// MIFS_FAKE_BUNDLE = folder to "build"; MIFS_FAKE_HANG=1 = never finish (tests cancel); MIFS_FAKE_FAIL=1 = exit with an error.
 import { cpSync, mkdirSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 

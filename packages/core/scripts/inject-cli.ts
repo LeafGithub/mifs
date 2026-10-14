@@ -1,4 +1,4 @@
-// Dev helper: inject with @mifs/core using a built ModLoader checkout (e.g. modloader-lab/work/modloader-src).
+// Dev helper: inject with @mifs/core using a built ModLoader checkout.
 // Usage: node scripts/inject-cli.ts <game.html> <modloader-src-dir> <config.json with "mods"> <out.html>
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

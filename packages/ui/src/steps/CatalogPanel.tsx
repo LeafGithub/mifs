@@ -9,7 +9,7 @@ import { Progress } from '../components/ui/progress';
 import { formatBytes, formatDate } from '../lib/utils';
 import { useApp } from '../store';
 
-/** "Download a ready-made bundle" section of the loader step. Rendered only when the host has a catalog. */
+/** "Download a ready-made bundle" section of the loader step. Only shown when the host has a catalog. */
 export function CatalogPanel() {
   const c = useApp((s) => s.catalog);
   const load = useApp((s) => s.loadCatalog);
@@ -18,7 +18,7 @@ export function CatalogPanel() {
 
   // New bundles, plus installed ones that were republished with a newer build.
   const available = c.list?.entries.filter((e) => !e.installed || e.updateAvailable) ?? [];
-  // The newest official (non-pre-release) bundle you do not have yet is the one to recommend.
+  // Recommend the newest official bundle not yet installed.
   const recommended = available.find((e) => e.kind === 'upstream' && !e.prerelease && !e.installed)?.id;
 
   return (
@@ -100,7 +100,7 @@ function CatalogSettingsForm() {
   const save = useApp((s) => s.saveCatalogSettings);
   const [repo, setRepo] = useState(settings?.repo ?? '');
   const [token, setToken] = useState('');
-  // The stored settings may arrive after the form is opened; follow them until the user has typed something else.
+  // Settings may load after the form opens; follow them until the user types.
   const [touched, setTouched] = useState(false);
   useEffect(() => {
     if (!touched) setRepo(settings?.repo ?? '');

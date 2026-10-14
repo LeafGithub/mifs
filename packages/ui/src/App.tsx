@@ -28,7 +28,7 @@ const TITLES = [
   ['Create your game', 'Review, then write the modded game file.'],
 ] as const;
 
-/** Plainer wording for the friendly themes (shown instead of the first hint; see .hud-only / .friendly-only in theme.css). */
+/** Plainer wording for the friendly themes (see .hud-only / .friendly-only in theme.css). */
 const FRIENDLY_HINTS = [
   'Pick which ModLoader to install. Each one comes with its recommended mods already chosen.',
   'Pick the game to add ModLoader to. Your original file is never changed; a new copy ending in .mod.html is saved.',
@@ -57,7 +57,7 @@ function Shell({ platform }: { platform: Platform }) {
 
   useEffect(() => void init(), [init]);
 
-  // Each step starts at the top; a scroll position left over from Customize must not clip the next screen.
+  // Each step starts at the top.
   const pane = useRef<HTMLDivElement>(null);
   useEffect(() => {
     pane.current?.scrollTo({ top: 0 });

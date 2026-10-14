@@ -1,6 +1,6 @@
 import type { BundleManifest, ModEntry } from './manifest.ts';
 
-/** Names that are not mods: the loader itself and the game's version (checked at runtime by CheckGameVersion). */
+/** Names that are not mods: the loader and the game version. */
 const VIRTUAL = new Set(['ModLoader', 'GameVersion']);
 
 /** Maps every name a mod can be depended on by (name, aliases) to the mod's id. */
@@ -46,7 +46,7 @@ export function resolveDependencies(manifest: BundleManifest, selected: Iterable
   return { ids, added: ids.filter((id) => !initial.has(id)), missing };
 }
 
-/** Selected mods that (directly or transitively) need `id`, i.e. what unchecking `id` would break. */
+/** Selected mods that need `id`, directly or not: what unchecking it would break. */
 export function dependentsOf(manifest: BundleManifest, id: string, selected: Iterable<string>): string[] {
   const chosen = new Set(selected);
   const names = nameIndex(manifest);
@@ -70,7 +70,7 @@ export function dependentsOf(manifest: BundleManifest, id: string, selected: Ite
   return manifest.mods.filter((m) => found.has(m.id)).map((m) => m.id);
 }
 
-/** Convenience for UIs: the default selection of a bundle, dependency-closed. */
+/** The bundle's default selection, dependency-closed. */
 export function defaultSelection(manifest: BundleManifest): string[] {
   return resolveDependencies(manifest, manifest.mods.filter((m: ModEntry) => m.default).map((m) => m.id)).ids;
 }

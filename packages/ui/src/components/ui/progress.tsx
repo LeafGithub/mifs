@@ -1,7 +1,7 @@
 import { Progress as Primitive } from 'radix-ui';
 import { cn } from '../../lib/utils';
 
-/** `value` 0..1, or null for an indeterminate line. A thin track with a glowing head, like a ship's heading. */
+/** `value` 0..1, or null for indeterminate. A thin track with a glowing head. */
 export function Progress({ value, className, ...rest }: { value: number | null; className?: string; 'aria-label'?: string }) {
   const pct = value === null ? null : Math.round(value * 100);
   return (

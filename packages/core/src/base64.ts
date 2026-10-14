@@ -1,4 +1,4 @@
-/** Environment-neutral (browser, worker, Node) bytes -> base64, converting in chunks to avoid call-stack limits. */
+/** Bytes -> base64 in any runtime (browser, worker, Node), chunked to avoid call-stack limits. */
 export function bytesToBase64(bytes: Uint8Array): string {
   const CHUNK = 0x8000;
   const parts: string[] = [];

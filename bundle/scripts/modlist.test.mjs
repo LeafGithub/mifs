@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseModList, resolveMods } from './modlist.mjs';
 
-const fixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'); // real files from the two repositories
+const fixture = (name) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'); // real files from both repos
 
 test('parses the thalia fork list: no ImageLoaderHook, no ImageLoaderHook2BeautySelectorAddon, no ModuleCssReplacer', () => {
   const list = parseModList(fixture('modList.thalia.json'));

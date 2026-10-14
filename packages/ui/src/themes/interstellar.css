@@ -1,5 +1,5 @@
-/* Interstellar: matte space black, Gargantua amber for action and selection, ice blue for done, rust for caution.
-   Also the default: it applies when <html> has no data-theme. */
+/* Interstellar: matte black, amber for action and selection, ice blue for done, rust for caution.
+   Also the base values when <html> has no data-theme. */
 :root,
 [data-theme='interstellar'] {
   color-scheme: dark;
@@ -21,7 +21,7 @@
   --ring: oklch(0.79 0.14 70);
   --radius: 0.25rem;
 
-  /* Decoration colours (the backdrop art and the glowing progress head). */
+  /* Backdrop art and progress head colours. */
   --disk: #f0a64a;
   --disk-core: #fff1d6;
   --hole-rim: #ffe7bd;

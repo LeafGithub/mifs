@@ -1,4 +1,4 @@
-// Runs in a worker thread: reading, patching and writing a 60-85 MB page must not block the main process.
+// Worker thread, so handling a 60-85 MB page does not block the main process.
 import { buildModHtml, resolveDependencies, type BundleManifest } from '@mifs/core';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

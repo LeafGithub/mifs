@@ -2,7 +2,7 @@ import { ipcMain } from 'electron';
 import log from 'electron-log/main';
 import type { ZodType } from 'zod';
 
-/** Error with a stable code that survives the IPC boundary (the renderer turns it into a PlatformError). */
+/** Error with a stable code that survives IPC (the renderer turns it into a PlatformError). */
 export class AppError extends Error {
   readonly code: string;
   constructor(code: string, message: string) {
@@ -15,8 +15,8 @@ export class AppError extends Error {
 export type Result<T> = { ok: true; value: T } | { ok: false; error: { code: string; message: string } };
 
 /**
- * Registers an IPC handler. Input is validated with zod (the renderer is not trusted), and failures come back as a
- * `Result` instead of a rejected invoke, whose message Electron prefixes with noise.
+ * Registers an IPC handler. Input is validated with zod (the renderer is untrusted); failures return a `Result`
+ * because Electron prefixes rejected invoke messages with noise.
  */
 export function handle<I, O>(channel: string, schema: ZodType<I> | null, fn: (input: I) => Promise<O> | O): void {
   ipcMain.handle(channel, async (_event, raw: unknown): Promise<Result<O>> => {

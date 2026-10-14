@@ -1,4 +1,4 @@
-# Windows packaging. Everything the app needs is bundled into out/ by electron-vite, so nothing from node_modules ships.
+# Windows packaging. electron-vite bundles everything into out/, so no node_modules ship.
 appId: dev.mifs.app
 productName: ModLoader Installer for SugarCube
 executableName: MIFS
@@ -11,7 +11,7 @@ files:
   - package.json
 electronVersion: 44.7.0 # pinned: electron-builder needs an exact version
 publish:
-  # Read by electron-updater at runtime (written to app-update.yml); builds never publish by themselves, CI uploads the files.
+  # Read by electron-updater at runtime (written to app-update.yml); CI uploads the files, builds never publish.
   provider: github
   owner: LeafGithub
   repo: mifs
@@ -19,7 +19,7 @@ asar: true
 npmRebuild: false
 compression: normal
 extraResources:
-  # build-from-source mode runs this script (it imports modlist.mjs and reads mods.json next to it) with the user's own Node.js
+  # build-from-source runs this script (with modlist.mjs and mods.json beside it) on the user's Node.js
   - from: ../../bundle/scripts/build-bundle.mjs
     to: bundle/scripts/build-bundle.mjs
   - from: ../../bundle/scripts/modlist.mjs
