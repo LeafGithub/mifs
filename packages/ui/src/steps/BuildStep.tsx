@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { KindLabel } from '../components/KindLabel';
+import { SupportLink } from '../components/SupportLink';
 import { Progress } from '../components/ui/progress';
 import { cn, formatBytes } from '../lib/utils';
 import { useApp } from '../store';
@@ -52,6 +53,10 @@ export function BuildStep() {
           <Button variant="outline" onClick={reset}>
             <RotateCcw /> Make another
           </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t pt-4">
+          <p className="min-w-0 flex-1 basis-48 text-[13px] text-muted-foreground">MIFS is free and made in spare time. If it saved you some hassle, a coffee is always appreciated.</p>
+          <SupportLink />
         </div>
       </Card>
     );

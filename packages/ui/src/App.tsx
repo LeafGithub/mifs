@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, Check, CircleAlert, Hammer } from 'lucide-react';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { KindLabel } from './components/KindLabel';
+import { SupportLink } from './components/SupportLink';
 import { ThemeSelect } from './components/ThemeSelect';
 import { UpdateNotice } from './components/UpdateNotice';
 import { Button } from './components/ui/button';
@@ -209,6 +210,7 @@ function Rail({
       <div className="mt-4" />
       <UpdateNotice platform={platform} />
       <ThemeSelect theme={theme} onChange={setTheme} />
+      <SupportLink className="mt-4 w-full" />
     </nav>
   );
 }

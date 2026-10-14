@@ -1,5 +1,7 @@
 # MIFS: ModLoader Installer for SugarCube
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V21QT2FO)
+
 Installs [ModLoader](https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoader) and its standard mods into a SugarCube 2 game page
 (Degrees of Lewdity Plus, DoL X-Change, ...). The original game file is never modified; a new `.mod.html` is written.
 
@@ -47,3 +49,9 @@ Run the e2e suite against a packaged build with `MIFS_EXE="packages/desktop/rele
   because electron-builder requires it.
 - The icon in `packages/desktop/build/icon.png` is a placeholder.
 - User data (installed bundles, downloaded games, logs) lives in `%APPDATA%\MIFS`.
+
+## Support
+
+MIFS is free. If it is useful to you, you can support it on Ko-fi:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/V7V21QT2FO)
