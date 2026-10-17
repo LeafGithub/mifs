@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ComponentType } from 'react';
-import { FrogScene, poseFor } from './components/FrogScene';
-import { Gargantua } from './components/Gargantua';
+import { Frog } from './components/Frog';
+import { poseFor } from './components/FrogScene';
+import { BlackHole } from './components/BlackHole';
 
 /**
  * A theme is a CSS block (themes/<id>.css, scoped to [data-theme='<id>']) plus what CSS cannot do.
@@ -16,9 +17,10 @@ export interface BackdropState {
   step: number;
 }
 
-const FROG = 'pointer-events-none absolute right-6 top-6 w-[clamp(8.75rem,18vw,11rem)] overflow-visible';
+// `frog-backdrop` lets lilypad.css reserve header space for the frog, so it never overlaps the content below.
+const FROG = 'frog-backdrop absolute z-10 right-6 top-2 w-[clamp(11rem,20vw,19rem)] overflow-visible';
 
-const CELEBRATE = 'w-44 overflow-visible min-[1200px]:w-56';
+const CELEBRATE = 'w-60 overflow-visible min-[1200px]:w-80';
 
 export interface Theme {
   id: string;
@@ -36,14 +38,14 @@ export const THEMES: readonly Theme[] = [
   {
     id: 'lilypad-dusk',
     name: 'Lilypad dusk',
-    Backdrop: (state) => (state.finished ? null : <FrogScene className={FROG} world="dusk" pose={poseFor(state)} />),
-    Celebrate: () => <FrogScene className={CELEBRATE} world="dusk" pose="done" />,
+    Backdrop: (state) => (state.finished ? null : <Frog className={FROG} world="dusk" pose={poseFor(state)} />),
+    Celebrate: () => <Frog className={CELEBRATE} world="dusk" pose="done" />,
   },
   {
     id: 'lilypad-meadow',
     name: 'Lilypad meadow',
-    Backdrop: (state) => (state.finished ? null : <FrogScene className={FROG} world="meadow" pose={poseFor(state)} />),
-    Celebrate: () => <FrogScene className={CELEBRATE} world="meadow" pose="done" />,
+    Backdrop: (state) => (state.finished ? null : <Frog className={FROG} world="meadow" pose={poseFor(state)} />),
+    Celebrate: () => <Frog className={CELEBRATE} world="meadow" pose="done" />,
   },
   {
     id: 'interstellar',
@@ -51,9 +53,9 @@ export const THEMES: readonly Theme[] = [
     shellClass: 'stars',
     Backdrop: ({ finished, running, failed }) => (
       // Sized from the viewport and faded toward the text so the disc stays off the header copy.
-      <Gargantua
+      <BlackHole
         state={failed ? 'failed' : running ? 'running' : finished ? 'done' : 'idle'}
-        className="pointer-events-none absolute -top-24 -right-[clamp(5rem,9vw,9rem)] w-[clamp(16rem,36vw,40rem)] min-[1000px]:-top-10 [mask-image:linear-gradient(to_left,#000_55%,transparent)]"
+        className="pointer-events-none absolute -top-16 right-2 w-[clamp(18rem,40vw,44rem)] min-[1000px]:-top-14 [mask-image:radial-gradient(ellipse_closest-side,#000_78%,transparent)]"
       />
     ),
   },

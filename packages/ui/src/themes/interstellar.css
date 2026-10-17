@@ -75,3 +75,65 @@ svg[data-state='failed'] {
     transform: scale(1);
   }
 }
+
+/* Always-on life: hot spots orbit the disk and the photon ring, the halo breathes, and a supernova shockwave
+   rolls out when the run succeeds. Dash offset, opacity and scale only. */
+.garg-spot {
+  animation: garg-orbit var(--t, 9s) linear infinite;
+}
+svg[data-state='running'] .garg-spot {
+  animation-duration: calc(var(--t, 9s) / 3);
+}
+svg[data-state='failed'] .garg-spot {
+  animation-play-state: paused;
+}
+.garg-halo {
+  animation: garg-halo 5s ease-in-out infinite;
+}
+svg[data-state='idle'] .garg-disk {
+  animation: garg-idle 7s ease-in-out infinite;
+}
+.garg-shock {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+svg[data-state='done'] .garg-shock {
+  animation: garg-shock 2.6s cubic-bezier(0.1, 0.6, 0.3, 1) 2;
+}
+@keyframes garg-orbit {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+@keyframes garg-halo {
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes garg-idle {
+  50% {
+    opacity: 0.92;
+    transform: scaleX(1.012);
+  }
+}
+@keyframes garg-shock {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+    stroke-width: 4;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.6);
+    stroke-width: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .garg-spot,
+  .garg-halo,
+  .garg-disk,
+  .garg-shock {
+    animation: none !important;
+  }
+}

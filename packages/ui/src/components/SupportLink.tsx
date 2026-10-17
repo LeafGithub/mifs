@@ -35,12 +35,12 @@ export function SupportLink({ className }: { className?: string }) {
       target="_blank"
       rel="noreferrer noopener"
       className={cn(
-        'inline-flex h-11 items-center justify-center gap-2.5 whitespace-nowrap rounded-sm border border-primary bg-primary px-5 font-display text-xs uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+        'inline-flex min-h-11 items-center justify-center gap-2.5 rounded-sm border border-primary bg-primary px-4 py-2 text-center font-display text-xs uppercase leading-snug tracking-[0.1em] text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
         className,
       )}
     >
       <KofiSymbol className="h-5 w-auto shrink-0" />
-      Support me on Ko-fi
+      <span className="min-w-0">Support me on Ko-fi</span>
     </a>
   );
 }
