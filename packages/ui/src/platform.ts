@@ -19,7 +19,10 @@ export interface GameFile {
 export interface GameAdapter {
   id: string;
   name: string;
+  /** One short line. */
   description: string;
+  /** Short badges such as `Needs Git`. */
+  tags?: string[];
 }
 
 export interface InjectRequest {

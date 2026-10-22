@@ -30,26 +30,38 @@ export function GameStep() {
 
       <section aria-labelledby="dl" className="flex flex-col gap-3">
         <SectionTitle id="dl">Download the latest release</SectionTitle>
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <ul className="flex flex-col gap-2">
           {adapters.map((a) => (
-            <Card key={a.id} className={cn('flex min-h-36 flex-col justify-between gap-4 p-5', busy === a.id && 'border-primary bg-accent/80')}>
-              <div>
-                <p className="text-base font-medium">{a.name}</p>
-                <p className="text-[13px] text-muted-foreground">{a.description}</p>
-              </div>
-              {busy === a.id ? (
-                <div className="flex flex-col gap-2" role="status">
-                  <Progress value={progress?.fraction ?? null} />
-                  <span className="font-mono text-xs text-muted-foreground">{progress?.label ?? 'Starting…'}</span>
+            <li key={a.id}>
+              <Card className={cn('flex flex-col gap-2 px-4 py-3', busy === a.id && 'border-primary bg-accent/80')}>
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="font-medium">{a.name}</span>
+                      {a.tags?.map((t) => (
+                        <span key={t} className="rounded-full border border-border px-2 py-px font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
+                          {t}
+                        </span>
+                      ))}
+                    </p>
+                    <p className="truncate text-[13px] text-muted-foreground" title={a.description}>
+                      {a.description}
+                    </p>
+                  </div>
+                  <Button variant="secondary" size="sm" disabled={busy !== null} onClick={() => fetchGame(a.id)} className="shrink-0">
+                    {busy === a.id ? <LoaderCircle className="animate-spin" /> : <Download />} Download
+                  </Button>
                 </div>
-              ) : (
-                <Button variant="secondary" size="sm" disabled={busy !== null} onClick={() => fetchGame(a.id)} className="self-start">
-                  <Download /> Download
-                </Button>
-              )}
-            </Card>
+                {busy === a.id && (
+                  <div className="flex flex-col gap-1.5" role="status">
+                    <Progress value={progress?.fraction ?? null} />
+                    <span className="font-mono text-xs text-muted-foreground">{progress?.label ?? 'Starting…'}</span>
+                  </div>
+                )}
+              </Card>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <section aria-labelledby="file" className="flex flex-col gap-3">

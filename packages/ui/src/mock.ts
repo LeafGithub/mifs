@@ -40,8 +40,9 @@ export const MOCK_BUNDLE: BundleInfo = {
 };
 
 export const MOCK_ADAPTERS: GameAdapter[] = [
-  { id: 'dolp', name: 'Degrees of Lewdity Plus', description: 'Latest HTML-only release from GitGud' },
-  { id: 'xchange', name: 'DoL X-Change Edition', description: 'Latest HTML release (images and audio are separate)' },
+  { id: 'dolp', name: 'Degrees of Lewdity Plus', description: 'Community fork with extra content', tags: ['HTML only'] },
+  { id: 'dol', name: 'Degrees of Lewdity', description: 'The original game, built from the official source', tags: ['Needs Git'] },
+  { id: 'xchange', name: 'DoL X-Change Edition', description: 'Gender-swap edition', tags: ['No images or audio'] },
 ];
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -85,7 +86,7 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
           emit({ kind: 'download', label: `Downloading… ${i * 20}%`, fraction: i / 5 });
           await wait(delay / 2);
         }
-        return game(id === 'xchange' ? 'DoL X-Change 0.22.2' : 'DoL Plus v0.778', 'download');
+        return game(id === 'xchange' ? 'DoL X-Change 0.22.2' : id === 'dol' ? 'Degrees of Lewdity 0.5.12.13' : 'DoL Plus v0.778', 'download');
       },
     },
     output: { pick: async (name) => `C:\\Users\\you\\Games\\${name}` },

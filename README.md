@@ -51,6 +51,7 @@ MIFS updates itself when a new release is published.
 
 | Game | Status |
 |---|---|
+| Degrees of Lewdity (vanilla) | Supported (compiled from source, needs Git) |
 | Degrees of Lewdity Plus | Supported |
 | DoL X-Change | Supported |
 | More SugarCube 2 games | Planned |
