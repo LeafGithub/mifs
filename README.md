@@ -47,6 +47,12 @@ MIFS updates itself when a new release is published.
 - **Update detection:** MIFS tells you when a newer build with different content is available.
 - **Themes:** Interstellar and Lilypad, with optional 3D backdrops.
 
+## Screenshots
+
+| Choose a game | Create your game | Done |
+|---|---|---|
+| ![Choose a game](docs/screenshots/2-game.png) | ![Create your game](docs/screenshots/3-install.png) | ![Done](docs/screenshots/4-done.png) |
+
 ## Supported games
 
 | Game | Status |
