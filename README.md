@@ -49,9 +49,11 @@ MIFS updates itself when a new release is published.
 
 ## Screenshots
 
-| Choose a game | Create your game | Done |
-|---|---|---|
-| ![Choose a game](docs/screenshots/2-game.png) | ![Create your game](docs/screenshots/3-install.png) | ![Done](docs/screenshots/4-done.png) |
+| Choose a loader | Choose a game |
+|---|---|
+| ![Choose a loader](docs/screenshots/1-loader.png) | ![Choose a game](docs/screenshots/2-game.png) |
+| **Create your game** | **Done** |
+| ![Create your game](docs/screenshots/3-install.png) | ![Done](docs/screenshots/4-done.png) |
 
 ## Supported games
 

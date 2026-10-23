@@ -210,7 +210,8 @@ function Rail({
       <div className="mt-4" />
       <UpdateNotice platform={platform} />
       <ThemeSelect theme={theme} onChange={setTheme} />
-      <SupportLink className="mt-4 w-full" />
+      {/* The finish screen has its own, better-timed ask. */}
+      {!allDone && <SupportLink className="mt-4 w-full" />}
     </nav>
   );
 }
