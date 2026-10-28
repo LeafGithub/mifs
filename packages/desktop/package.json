@@ -1,6 +1,6 @@
 {
   "name": "@mifs/desktop",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "MIFS: ModLoader Installer for SugarCube",
   "author": "MIFS",
