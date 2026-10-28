@@ -1,7 +1,7 @@
-import { defaultSelection, dependentsOf, resolveDependencies } from '@mifs/core';
+import { bundleClashes, defaultSelection, dependentsOf, resolveDependencies, type BundleManifest } from '@mifs/core';
 import { createContext, useContext } from 'react';
 import { createStore, useStore, type StoreApi } from 'zustand';
-import type { BundleInfo, CatalogList, CatalogSettings, GameAdapter, GameFile, InjectResult, Platform, Preflight, ProgressEvent } from './platform';
+import type { BundleInfo, CatalogList, CatalogSettings, GameAdapter, GameFile, InjectResult, LocalMod, LocalModsChange, Platform, Preflight, ProgressEvent } from './platform';
 import { UPSTREAM_REPO } from './lib/sources';
 
 export const STEPS = ['Loader', 'Game', 'Create'] as const;
@@ -60,6 +60,24 @@ export interface CatalogState {
   settingsOpen: boolean;
 }
 
+export interface LocalModsState {
+  list: LocalMod[];
+  /** An add, locate or other change is in flight. */
+  busy: boolean;
+  /** Files from the last add that held no usable mod. */
+  rejected: LocalModsChange['rejected'];
+  /** What the last change did that the user should know. */
+  notices: string[];
+  error: string | null;
+}
+
+const idleLocal: LocalModsState = { list: [], busy: false, rejected: [], notices: [], error: null };
+
+/** The user's mods that go into the next game: on, readable, and not clashing with the bundle. */
+export function usableLocalMods(list: LocalMod[], manifest: BundleManifest | null): LocalMod[] {
+  return list.filter((m) => m.enabled && m.status === 'ok' && !(manifest && bundleClashes(manifest, m).length));
+}
+
 const idleCatalog: CatalogState = { list: null, loading: false, error: null, actionError: null, installing: null, progress: null, settings: null, settingsOpen: false };
 
 export interface AppState {
@@ -80,6 +98,9 @@ export interface AppState {
   gameProgress: ProgressEvent | null;
   selected: string[];
   notice: string | null;
+  /** The host remembers the user's own mod zips. */
+  canLocalMods: boolean;
+  localMods: LocalModsState;
   outputPath: string | null;
   run: RunState;
   /** Last action failure, shown inline until the next action. */
@@ -103,6 +124,13 @@ export interface AppState {
   fetchGame(adapterId: string): Promise<void>;
   toggleMod(id: string, on: boolean): void;
   resetMods(): void;
+  addLocalMods(): Promise<void>;
+  dropLocalMods(files: File[]): Promise<void>;
+  locateLocalMod(id: string): Promise<void>;
+  toggleLocalMod(id: string, on: boolean): Promise<void>;
+  moveLocalMod(id: string, toIndex: number): Promise<void>;
+  removeLocalMod(id: string): Promise<void>;
+  dismissLocalMessages(): void;
   pickOutput(): Promise<void>;
   start(): Promise<void>;
   showInFolder(path: string): Promise<void>;
@@ -120,6 +148,41 @@ export function suggestedOutputName(game: GameFile | null): string {
 export function createAppStore(platform: Platform): StoreApi<AppState> {
   const store = createStore<AppState>((set, get) => {
     const currentManifest = () => get().bundles.find((b) => b.id === get().bundleId)?.manifest ?? null;
+    const usable = () => usableLocalMods(get().localMods.list, currentManifest());
+
+    /** Adds the bundled mods the user's enabled mods need; returns their names for a notice. */
+    const pullLocalDeps = (base: string[] = get().selected) => {
+      const manifest = currentManifest();
+      if (!manifest) return [];
+      const r = resolveDependencies(manifest, base, usable());
+      const before = new Set(base);
+      set({ selected: r.ids });
+      return r.ids.filter((id) => !before.has(id)).map((id) => manifest.mods.find((m) => m.id === id)?.name ?? id);
+    };
+
+    const applyLocal = (change: LocalModsChange | LocalMod[]) => {
+      const mods = Array.isArray(change) ? change : change.mods;
+      set((s) => ({
+        localMods: {
+          ...s.localMods,
+          list: mods,
+          busy: false,
+          error: null,
+          ...(Array.isArray(change) ? {} : { rejected: change.rejected, notices: change.notices }),
+        },
+      }));
+      const added = pullLocalDeps();
+      if (added.length) set((s) => ({ localMods: { ...s.localMods, notices: [...s.localMods.notices, `Also turned on bundled mods your mods need: ${added.join(', ')}`] } }));
+    };
+
+    const localAction = async (fn: () => Promise<LocalModsChange | LocalMod[]>) => {
+      set((s) => ({ localMods: { ...s.localMods, busy: true, error: null, rejected: [], notices: [] } }));
+      try {
+        applyLocal(await fn());
+      } catch (e) {
+        set((s) => ({ localMods: { ...s.localMods, busy: false, error: message(e) } }));
+      }
+    };
 
     // Only the newest catalog load may update state; an older, slower one
     // (e.g. started before a token was saved) must not overwrite it.
@@ -149,6 +212,8 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
       gameProgress: null,
       selected: [],
       notice: null,
+      canLocalMods: platform.localMods !== undefined,
+      localMods: idleLocal,
       outputPath: null,
       run: idleRun,
       error: null,
@@ -159,6 +224,12 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
           set({ bundles, adapters, bundlesLoaded: true });
           if (bundles.length === 1) get().selectBundle(bundles[0]!.id);
           void get().loadCatalog();
+          if (platform.localMods) {
+            platform.localMods.list().then(
+              (list) => applyLocal(list),
+              (e: unknown) => set((s) => ({ localMods: { ...s.localMods, error: message(e) } })),
+            );
+          }
         } catch (e) {
           set({ bundlesLoaded: true, error: message(e) });
         }
@@ -286,6 +357,7 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
         const b = get().bundles.find((x) => x.id === id);
         if (!b) return;
         set({ bundleId: id, selected: defaultSelection(b.manifest), notice: null, error: null });
+        pullLocalDeps();
       },
 
       async pickGameFile() {
@@ -320,15 +392,34 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
           const names = r.added.filter((a) => a !== id).map((a) => manifest.mods.find((m) => m.id === a)?.name ?? a);
           set({ selected: r.ids, notice: names.length ? `Also added what ${manifest.mods.find((m) => m.id === id)?.name} needs: ${names.join(', ')}` : null });
         } else {
-          if (dependentsOf(manifest, id, selected).length) return; // the UI disables this; guard anyway
+          if (dependentsOf(manifest, id, selected, usable()).length) return; // the UI disables this; guard anyway
           set({ selected: selected.filter((s) => s !== id), notice: null });
         }
       },
 
       resetMods() {
         const manifest = currentManifest();
-        if (manifest) set({ selected: defaultSelection(manifest), notice: null });
+        if (manifest) {
+          set({ selected: defaultSelection(manifest), notice: null });
+          pullLocalDeps();
+        }
       },
+
+      addLocalMods: () => localAction(() => platform.localMods!.pick()),
+
+      async dropLocalMods(files) {
+        const api = platform.localMods;
+        if (!api) return;
+        const paths = files.map((f) => api.pathForFile(f)).filter(Boolean);
+        if (paths.length === 0) return;
+        await localAction(() => api.addPaths(paths));
+      },
+
+      locateLocalMod: (id) => localAction(() => platform.localMods!.locate(id)),
+      toggleLocalMod: (id, on) => localAction(() => platform.localMods!.setEnabled(id, on)),
+      moveLocalMod: (id, toIndex) => localAction(() => platform.localMods!.move(id, toIndex)),
+      removeLocalMod: (id) => localAction(() => platform.localMods!.remove(id)),
+      dismissLocalMessages: () => set((s) => ({ localMods: { ...s.localMods, rejected: [], notices: [], error: null } })),
 
       async pickOutput() {
         try {
@@ -344,10 +435,13 @@ export function createAppStore(platform: Platform): StoreApi<AppState> {
         if (!bundleId || !game || !outputPath) return;
         set({ run: { status: 'running', progress: null, result: null, error: null }, error: null });
         try {
-          const result = await platform.inject.run({ bundleId, gameId: game.id, modIds: selected, outputPath });
+          const localModIds = usable().map((m) => m.id);
+          const result = await platform.inject.run({ bundleId, gameId: game.id, modIds: selected, ...(localModIds.length ? { localModIds } : {}), outputPath });
           set({ run: { status: 'done', progress: null, result, error: null } });
         } catch (e) {
           set({ run: { status: 'error', progress: null, result: null, error: message(e) } });
+          // a changed or missing file is re-checked by the host; show what is on disk now
+          if (platform.localMods) platform.localMods.list().then((list) => applyLocal(list), () => undefined);
         }
       },
 

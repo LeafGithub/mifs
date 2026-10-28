@@ -1,5 +1,5 @@
 import { PlatformError, type AppUpdate, type Platform, type ProgressEvent } from '@mifs/ui/platform';
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 type Result<T> = { ok: true; value: T } | { ok: false; error: { code: string; message: string } };
 
@@ -22,6 +22,16 @@ const api: Platform = {
   },
   output: { pick: (suggestedName, gameId) => call('output:pick', { suggestedName, gameId }) },
   inject: { run: (request) => call('inject:run', request) },
+  localMods: {
+    list: () => call('localMods:list'),
+    pick: () => call('localMods:pick'),
+    addPaths: (paths) => call('localMods:addPaths', { paths }),
+    locate: (id) => call('localMods:locate', { id }),
+    setEnabled: (id, enabled) => call('localMods:setEnabled', { id, enabled }),
+    move: (id, toIndex) => call('localMods:move', { id, toIndex }),
+    remove: (id) => call('localMods:remove', { id }),
+    pathForFile: (file) => webUtils.getPathForFile(file),
+  },
   shell: { showInFolder: (path) => call('shell:showInFolder', { path }) },
   catalog: {
     list: () => call('catalog:list'),

@@ -1,5 +1,5 @@
 import { parseManifest } from '@mifs/core';
-import { PlatformError, type AppUpdate, type BundleInfo, type GameAdapter, type GameFile, type Platform, type ProgressEvent } from './platform';
+import { PlatformError, type AppUpdate, type BundleInfo, type GameAdapter, type GameFile, type LocalMod, type Platform, type ProgressEvent } from './platform';
 
 const sha = (c: string) => c.repeat(64);
 const mod = (id: string, version: string, size: number, deps: string[] = [], extra: Record<string, unknown> = {}) => ({
@@ -45,12 +45,52 @@ export const MOCK_ADAPTERS: GameAdapter[] = [
   { id: 'xchange', name: 'DoL X-Change Edition', description: 'Gender-swap edition', tags: ['No images or audio'] },
 ];
 
+const localMod = (name: string, version: string, size: number, extra: Partial<LocalMod> = {}): LocalMod => ({
+  id: `l-${name}`,
+  fileName: `${name}.mod.zip`,
+  path: `C:\\Users\\you\\Downloads\\${name}.mod.zip`,
+  name,
+  version,
+  aliases: [],
+  dependsOn: [{ name: 'ModLoader', range: '^2.0.0' }],
+  size,
+  enabled: true,
+  status: 'ok',
+  warnings: [],
+  notes: [],
+  ...extra,
+});
+
+/** What "Add mod zips…" finds in the mock, one batch per click. */
+const MOCK_PICKS: LocalMod[][] = [
+  [localMod('BetterHair', '0.4.1', 1_820_331, { dependsOn: [{ name: 'ModLoader', range: '^2.0.0' }, { name: 'TweeReplacer', range: '^1.0.0' }] })],
+  [
+    localMod('OutfitPack', '2.0.0', 5_201_009, { fileName: 'Outfits.zip', inside: { kind: 'folder', name: 'OutfitPack' }, notes: ['Repacked: boot.json was inside the folder "OutfitPack"'], dependsOn: [{ name: 'ModdedClothesAddon', range: '^1.6.0' }, { name: 'ExtraColors', range: '*' }] }),
+    localMod('ExtraColors', '1.0.0', 88_120, { fileName: 'Outfits.zip', inside: { kind: 'folder', name: 'ExtraColors' }, notes: ['Repacked from the folder "ExtraColors" (one of 2 mods in this zip)'], warnings: ['boot.json lists files that are not in the zip: img/palette.png'] }),
+  ],
+];
+
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const CATALOG_BUILT_AT = '2026-10-10T11:03:00Z';
 
 /** In-memory Platform for running and testing the UI without Electron. */
-export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: number } = {}): Platform {
+export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: number; localMods?: LocalMod[] } = {}): Platform {
   const delay = opts.delay ?? 400;
+  let local: LocalMod[] = opts.localMods ?? [localMod('QuickSave', '1.1.0', 42_007, { status: 'missing', error: 'File not found: C:\\Users\\you\\Downloads\\QuickSave.mod.zip' })];
+  let picks = 0;
+  const addLocal = (found: LocalMod[]) => {
+    const notices: string[] = [];
+    for (const m of found) {
+      const i = local.findIndex((x) => x.name === m.name);
+      if (i === -1) local = [...local, m];
+      else {
+        notices.push(`Replaced ${m.name} v${local[i]!.version} with v${m.version}`);
+        local = local.map((x, j) => (j === i ? { ...m, id: x.id, enabled: x.enabled } : x));
+      }
+    }
+    return { mods: local, rejected: [], notices };
+  };
+  const changeLocal = (fn: (l: LocalMod[]) => LocalMod[]) => async () => (local = fn(local));
   const listeners = new Set<(e: ProgressEvent) => void>();
   const emit = (e: ProgressEvent) => listeners.forEach((l) => l(e));
   const logListeners = new Set<(lines: string[]) => void>();
@@ -96,8 +136,33 @@ export function createMockPlatform(opts: { bundles?: BundleInfo[]; delay?: numbe
           emit({ kind: 'inject', label, fraction });
           await wait(delay);
         }
-        return { outputPath: req.outputPath, size: 71_649_151, modIds: req.modIds, warnings: [], ms: 4 * delay };
+        return { outputPath: req.outputPath, size: 71_649_151, modIds: req.modIds, localModIds: req.localModIds ?? [], warnings: [], ms: 4 * delay };
       },
+    },
+    localMods: {
+      list: async () => local,
+      pick: async () => {
+        await wait(delay / 2);
+        return addLocal(MOCK_PICKS[picks++ % MOCK_PICKS.length]!);
+      },
+      addPaths: async (paths) => ({
+        mods: local,
+        rejected: paths.map((p) => ({ fileName: p.split(/[\/]/).pop() ?? p, error: 'Not a ModLoader mod: no boot.json found.' })),
+        notices: [],
+      }),
+      locate: async (id) => {
+        local = local.map((m) => (m.id === id ? { ...m, status: 'ok', error: undefined } : m));
+        return { mods: local, rejected: [], notices: [] };
+      },
+      setEnabled: (id, enabled) => changeLocal((l) => l.map((m) => (m.id === id ? { ...m, enabled } : m)))(),
+      move: (id, to) =>
+        changeLocal((l) => {
+          const next = l.filter((m) => m.id !== id);
+          next.splice(to, 0, l.find((m) => m.id === id)!);
+          return next;
+        })(),
+      remove: (id) => changeLocal((l) => l.filter((m) => m.id !== id))(),
+      pathForFile: (file) => file.name,
     },
     shell: { showInFolder: async () => {} },
     catalog: {

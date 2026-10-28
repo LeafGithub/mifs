@@ -9,6 +9,7 @@ import { installFromCatalog, listCatalog } from './services/catalog';
 import { getCatalogSettings, saveCatalogSettings } from './services/settings';
 import { fetchLatestGame, gameOriginDir, listAdapters, pickGameFile } from './services/games';
 import { allowedOutputs, runInject } from './services/inject';
+import { addLocalModPaths, listLocalMods, locateLocalMod, moveLocalMod, pickLocalMods, removeLocalMod, setLocalModEnabled } from './services/localMods';
 import { checkUpdate, downloadUpdate, getUpdate, initUpdater, installUpdate } from './services/updater';
 
 // Stable user data folder, independent of the product name (tests pass --user-data-dir).
@@ -76,9 +77,18 @@ function registerHandlers() {
 
   handle(
     'inject:run',
-    z.object({ bundleId: z.string(), gameId: z.string(), modIds: z.array(z.string()).max(500), outputPath: z.string() }),
+    z.object({ bundleId: z.string(), gameId: z.string(), modIds: z.array(z.string()).max(500), localModIds: z.array(z.string()).max(500).optional(), outputPath: z.string() }),
     (req) => runInject(req, progress),
   );
+
+  const localId = z.object({ id: z.string().max(100) });
+  handle('localMods:list', null, () => listLocalMods());
+  handle('localMods:pick', null, () => pickLocalMods(win));
+  handle('localMods:addPaths', z.object({ paths: z.array(z.string().min(1).max(1000)).max(100) }), ({ paths }) => addLocalModPaths(paths));
+  handle('localMods:locate', localId, ({ id }) => locateLocalMod(win, id));
+  handle('localMods:setEnabled', localId.extend({ enabled: z.boolean() }), ({ id, enabled }) => setLocalModEnabled(id, enabled));
+  handle('localMods:move', localId.extend({ toIndex: z.number().int().min(0).max(10_000) }), ({ id, toIndex }) => moveLocalMod(id, toIndex));
+  handle('localMods:remove', localId, ({ id }) => removeLocalMod(id));
 
   handle('catalog:list', null, () => listCatalog());
   handle('catalog:install', z.object({ id: z.string().max(100) }), ({ id }) => installFromCatalog(id, progress));

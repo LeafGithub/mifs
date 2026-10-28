@@ -1,4 +1,4 @@
-import type { BundleManifest } from '@mifs/core';
+import type { BundleManifest, DepRange } from '@mifs/core';
 
 /** A ModLoader bundle available on this machine. */
 export interface BundleInfo {
@@ -30,14 +30,18 @@ export interface InjectRequest {
   gameId: string;
   /** Selected mod ids; dependencies are added automatically by the injector. */
   modIds: string[];
+  /** The user's own mods to embed after the bundled ones (ids from `localMods`). Ordered by the host. */
+  localModIds?: string[];
   outputPath: string;
 }
 
 export interface InjectResult {
   outputPath: string;
   size: number;
-  /** Mods actually embedded, in load order (selection plus dependencies). */
+  /** Bundled mods actually embedded, in load order (selection plus dependencies). */
   modIds: string[];
+  /** The user's own mods embedded after them, in load order. */
+  localModIds: string[];
   warnings: string[];
   ms: number;
 }
@@ -47,6 +51,42 @@ export interface ProgressEvent {
   label: string;
   /** 0..1, or null when unknown. */
   fraction: number | null;
+}
+
+/** One of the user's own mod zips, remembered across restarts. */
+export interface LocalMod {
+  id: string;
+  /** Name of the file on disk. */
+  fileName: string;
+  /** Full path of the file on disk (shown so a missing file can be found again). */
+  path: string;
+  /** Where in the file the mod was found, when it was not the file itself. */
+  inside?: { kind: 'folder' | 'zip'; name: string };
+  /** From boot.json; empty when the file could not be read. */
+  name: string;
+  version: string;
+  aliases: string[];
+  dependsOn: DepRange[];
+  /** Bytes as embedded. */
+  size: number;
+  /** Goes into the next game the user creates. */
+  enabled: boolean;
+  /** `missing`: the file is gone; `invalid`: it no longer holds a usable mod (see `error`). */
+  status: 'ok' | 'missing' | 'invalid';
+  error?: string;
+  /** Embedded anyway, but may fail in game. */
+  warnings: string[];
+  /** Things MIFS fixed or noticed, e.g. that it repacked the zip. */
+  notes: string[];
+}
+
+export interface LocalModsChange {
+  /** The whole list, in the user's order. */
+  mods: LocalMod[];
+  /** Files that held no usable mod, and why. */
+  rejected: { fileName: string; error: string }[];
+  /** What happened that the user should know, e.g. a mod replaced by a newer copy. */
+  notices: string[];
 }
 
 /** A published loader bundle that can be downloaded. */
@@ -143,6 +183,22 @@ export interface Platform {
   };
   inject: {
     run(request: InjectRequest): Promise<InjectResult>;
+  };
+  /** The user's own mod zips. Absent on hosts without local files. */
+  localMods?: {
+    /** The remembered list, re-checked against the files on first call. */
+    list(): Promise<LocalMod[]>;
+    /** Opens a file picker (several .zip files). */
+    pick(): Promise<LocalModsChange>;
+    /** Adds files dropped onto the window (paths from `pathForFile`). */
+    addPaths(paths: string[]): Promise<LocalModsChange>;
+    /** Lets the user pick the file again for a mod whose file is gone. */
+    locate(id: string): Promise<LocalModsChange>;
+    setEnabled(id: string, enabled: boolean): Promise<LocalMod[]>;
+    move(id: string, toIndex: number): Promise<LocalMod[]>;
+    remove(id: string): Promise<LocalMod[]>;
+    /** Path on disk of a dropped file; empty when the host cannot tell. */
+    pathForFile(file: File): string;
   };
   shell: {
     showInFolder(path: string): Promise<void>;

@@ -6,7 +6,8 @@ import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
 import { formatBytes } from '../lib/utils';
-import { useApp } from '../store';
+import { useApp, usableLocalMods } from '../store';
+import { LocalMods } from './LocalMods';
 
 /** The fine-pick list of bundled mods. Shown inside the Install step after "Customize". */
 export function ModsEditor() {
@@ -15,10 +16,13 @@ export function ModsEditor() {
   const notice = useApp((s) => s.notice);
   const toggle = useApp((s) => s.toggleMod);
   const reset = useApp((s) => s.resetMods);
+  const localList = useApp((s) => s.localMods.list);
+  const canLocal = useApp((s) => s.canLocalMods);
   const chosen = useMemo(() => new Set(selected), [selected]);
 
   if (!bundle) return null;
   const manifest = bundle.manifest;
+  const local = usableLocalMods(localList, manifest);
   const total = manifest.mods.filter((m) => chosen.has(m.id)).reduce((n, m) => n + m.size, 0);
 
   return (
@@ -41,8 +45,8 @@ export function ModsEditor() {
       <Card className="divide-y">
         <ul aria-label="Mods">
           {manifest.mods.map((m) => {
-            const blockedBy = chosen.has(m.id) ? dependentsOf(manifest, m.id, selected) : [];
-            const blockedNames = blockedBy.map((id) => manifest.mods.find((x) => x.id === id)?.name ?? id);
+            const blockedBy = chosen.has(m.id) ? dependentsOf(manifest, m.id, selected, local) : [];
+            const blockedNames = blockedBy.map((id) => manifest.mods.find((x) => x.id === id)?.name ?? local.find((x) => x.id === id)?.name ?? id);
             const needs = m.dependsOn.filter((d) => d.name !== 'ModLoader' && d.name !== 'GameVersion');
             const game = m.dependsOn.find((d) => d.name === 'GameVersion');
             return (
@@ -69,6 +73,8 @@ export function ModsEditor() {
           })}
         </ul>
       </Card>
+
+      {canLocal && <LocalMods />}
     </div>
   );
 }

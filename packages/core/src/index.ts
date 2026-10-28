@@ -18,3 +18,5 @@ export { ManifestError, parseManifest, type BundleManifest, type DepRange, type 
 export { sha256Hex, verifySha256 } from './hash.ts';
 export { defaultSelection, dependentsOf, resolveDependencies, type Resolution } from './selection.ts';
 export { bundleFingerprint, canonicalContent } from './fingerprint.ts';
+export { BootJsonError, bundleClashes, normalizeZipPath, orderLocal, parseBootJson, type LocalModInfo, type LocalProvider } from './localMod.ts';
+export { satisfies } from './semver.ts';

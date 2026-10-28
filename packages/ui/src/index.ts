@@ -11,6 +11,8 @@ export type {
   GameFile,
   InjectRequest,
   InjectResult,
+  LocalMod,
+  LocalModsChange,
   Platform,
   Preflight,
   ProgressEvent,

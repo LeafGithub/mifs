@@ -1,5 +1,5 @@
 import { defaultSelection } from '@mifs/core';
-import { Check, CircleAlert, Copy, FolderSearch, RotateCcw, FolderOpen, SlidersHorizontal, TriangleAlert } from 'lucide-react';
+import { Check, CircleAlert, Copy, FolderSearch, RotateCcw, FolderOpen, Plus, SlidersHorizontal, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -7,7 +7,8 @@ import { KindLabel } from '../components/KindLabel';
 import { SupportLink } from '../components/SupportLink';
 import { Progress } from '../components/ui/progress';
 import { cn, formatBytes } from '../lib/utils';
-import { useApp } from '../store';
+import { useApp, usableLocalMods } from '../store';
+import { LocalMods } from './LocalMods';
 import { ModsEditor } from './ModsEditor';
 
 export function BuildStep() {
@@ -19,11 +20,18 @@ export function BuildStep() {
   const pickOutput = useApp((s) => s.pickOutput);
   const reset = useApp((s) => s.reset);
   const showInFolder = useApp((s) => s.showInFolder);
+  const canLocal = useApp((s) => s.canLocalMods);
+  const localList = useApp((s) => s.localMods.list);
 
-  const [customizing, setCustomizing] = useState(false);
+  // 'local' shows only Your mods, so adding a zip does not open the whole bundled list
+  const [panel, setPanel] = useState<null | 'customize' | 'local'>(null);
+  const customizing = panel !== null;
   const standard = bundle ? defaultSelection(bundle.manifest) : [];
   const isStandard = selected.length === standard.length && standard.every((id) => selected.includes(id));
-  const modsLabel = bundle ? (isStandard ? `Standard set: ${selected.length} mods` : `Custom: ${selected.length} of ${bundle.manifest.mods.length} mods`) : '—';
+  const yours = bundle ? usableLocalMods(localList, bundle.manifest).length : 0;
+  const modsLabel = bundle
+    ? (isStandard ? `Standard set: ${selected.length} mods` : `Custom: ${selected.length} of ${bundle.manifest.mods.length} mods`) + (yours ? ` + ${yours} of yours` : '')
+    : '—';
 
   const ready = bundle && game && outputPath && selected.length > 0;
 
@@ -37,7 +45,7 @@ export function BuildStep() {
         </div>
         <dl className="flex gap-11">
           <Stat label="Size" value={formatBytes(run.result.size)} />
-          <Stat label="Mods" value={String(run.result.modIds.length)} />
+          <Stat label="Mods" value={run.result.localModIds.length ? `${run.result.modIds.length + run.result.localModIds.length} (${run.result.localModIds.length} yours)` : String(run.result.modIds.length)} />
           <Stat label="Time" value={`${(run.result.ms / 1000).toFixed(1)} s`} />
         </dl>
         <p className="text-sm text-muted-foreground">Open the file in your browser to play. If your game uses separate image folders, keep them next to it.</p>
@@ -69,7 +77,7 @@ export function BuildStep() {
           <p className="min-w-0 flex-1 truncate">
             {game?.name ?? '—'} · {modsLabel}
           </p>
-          <Button variant="ghost" size="sm" onClick={() => setCustomizing(false)} aria-expanded>
+          <Button variant="ghost" size="sm" onClick={() => setPanel(null)} aria-expanded>
             <SlidersHorizontal /> Done
           </Button>
         </Card>
@@ -94,9 +102,16 @@ export function BuildStep() {
               label="Mods"
               value={modsLabel}
               action={
-                <Button variant="ghost" size="sm" onClick={() => setCustomizing((v) => !v)} aria-expanded={customizing}>
-                  <SlidersHorizontal /> {customizing ? 'Done' : 'Customize…'}
-                </Button>
+                <div className="flex shrink-0 flex-wrap justify-end">
+                  {canLocal && (
+                    <Button variant="ghost" size="sm" onClick={() => setPanel('local')}>
+                      <Plus /> Your mods…
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setPanel('customize')}>
+                    <SlidersHorizontal /> Customize…
+                  </Button>
+                </div>
               }
             />
           )}
@@ -105,7 +120,8 @@ export function BuildStep() {
       </Card>
       )}
 
-      {customizing && run.status !== 'running' && <ModsEditor />}
+      {panel === 'customize' && run.status !== 'running' && <ModsEditor />}
+      {panel === 'local' && run.status !== 'running' && <LocalMods />}
 
       {run.status !== 'running' && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">

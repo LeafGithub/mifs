@@ -29,9 +29,9 @@ test.beforeAll(() => {
 test.afterEach(async () => app?.close());
 test.afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
-async function launch(env: Record<string, string> = {}) {
+async function launch(env: Record<string, string> = {}, opts: { sameProfile?: boolean } = {}) {
   // MIFS_EXE runs the same tests against a packaged build (release/win-unpacked/ModLoader Installer.exe)
-  const userData = `--user-data-dir=${join(tmp, `userdata-${++launches}`)}`;
+  const userData = `--user-data-dir=${join(tmp, `userdata-${opts.sameProfile ? launches : ++launches}`)}`;
   app = process.env.MIFS_EXE
     ? await electron.launch({ executablePath: process.env.MIFS_EXE, args: [userData], env: { ...(process.env as Record<string, string>), ...env } })
     : await electron.launch({ args: ['.', userData], cwd: resolve(here, '..'), env: { ...(process.env as Record<string, string>), ...env } });
@@ -117,6 +117,75 @@ test('customizing the mod set changes what is embedded, and restoring defaults b
   await expect(page.getByText('Done', { exact: true })).toBeVisible({ timeout: 60_000 });
   const zips = JSON.parse(/window\.modDataValueZipList = (\[.*?\]);/s.exec(readFileSync(out, 'utf8'))![1]!) as string[];
   expect(zips.length).toBe(total - 1);
+});
+
+test('embeds your own mod zips after the bundled mods and remembers them across restarts', async () => {
+  const gamePath = join(tmp, 'Own Mods Game.html');
+  writeFileSync(gamePath, GAME);
+  const out = join(tmp, 'Own Mods Game.mod.html');
+  const boot = (name: string, extra: object = {}) => Buffer.from(JSON.stringify({ name, version: '1.0.0', ...extra }));
+  const hello = join(tmp, 'Hello.mod.zip');
+  writeFileSync(hello, zipSync({ 'boot.json': boot('Hello', { scriptFileList: ['hello.js'], dependenceInfo: [{ modName: 'DoLLinkButtonFilter', version: '*' }] }), 'hello.js': Buffer.from('1') }));
+  const wrapped = join(tmp, 'Wrapped.zip');
+  writeFileSync(wrapped, zipSync({ Wrapped: { 'boot.json': boot('Wrapped') } }));
+  const clash = join(tmp, 'Clash.mod.zip');
+  writeFileSync(clash, zipSync({ 'boot.json': boot('TweeReplacer') }));
+  const junk = join(tmp, 'Junk.zip');
+  writeFileSync(junk, zipSync({ 'readme.txt': Buffer.from('') }));
+
+  const pickMany = (paths: string[]) => app.evaluate(({ dialog }, p) => void (dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: p })) as never), paths);
+  const toInstall = async (page: import('@playwright/test').Page) => {
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: /Choose game/ }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+  };
+
+  let page = await launch();
+  await stubDialogs({ open: [BUNDLE, gamePath], save: out });
+  await page.getByRole('button', { name: 'Import bundle folder…' }).click();
+  await toInstall(page);
+
+  // turn off a bundled mod that Hello needs; adding Hello turns it back on
+  await page.getByRole('button', { name: 'Customize…' }).click();
+  const total = await page.locator('ul[aria-label="Mods"] li').count();
+  await page.locator('#mod-DoLLinkButtonFilter').click();
+  await expect(page.locator('#mod-DoLLinkButtonFilter')).not.toBeChecked();
+  await pickMany([hello, wrapped, clash, junk]);
+  await page.getByRole('button', { name: 'Add mod zips…' }).click();
+  let yours = page.locator('ul[aria-label="Your mods"]');
+  await expect(yours.getByLabel('Use Hello')).toBeChecked();
+  await expect(yours.getByText(/Repacked: boot\.json was inside the folder "Wrapped"/)).toBeVisible();
+  await expect(yours.getByText(/Already in the loader bundle/)).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: 'Junk.zip' })).toContainText('no boot.json');
+  await expect(page.getByText(/Also turned on bundled mods your mods need: DoLLinkButtonFilter/)).toBeVisible();
+  await expect(page.locator('#mod-DoLLinkButtonFilter')).toBeChecked();
+  await expect(page.locator('#mod-DoLLinkButtonFilter')).toBeDisabled(); // Hello needs it
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect(page.getByText(`Standard set: ${total} mods + 2 of yours`)).toBeVisible();
+
+  await page.getByRole('button', { name: /Choose where to save/ }).click();
+  await page.getByRole('button', { name: 'Create modded game' }).click();
+  await expect(page.getByText('Done', { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(`${total + 2} (2 yours)`)).toBeVisible();
+  const zips = JSON.parse(/window\.modDataValueZipList = (\[.*?\]);/s.exec(readFileSync(out, 'utf8'))![1]!) as string[];
+  expect(zips).toHaveLength(total + 2);
+  const names = zips.slice(-2).map((z) => JSON.parse(Buffer.from(unzipSync(Buffer.from(z, 'base64'))['boot.json']!).toString()).name);
+  expect(names).toEqual(['Hello', 'Wrapped']); // after the bundled mods, Wrapped repacked with boot.json at the top
+
+  // restart: the list is remembered; a deleted file shows up as missing
+  await app.close();
+  rmSync(hello);
+  page = await launch({}, { sameProfile: true });
+  await stubDialogs({ open: [gamePath] });
+  await toInstall(page);
+  await expect(page.getByText(`Standard set: ${total} mods + 1 of yours`)).toBeVisible();
+  await page.getByRole('button', { name: 'Your mods…' }).click();
+  yours = page.locator('ul[aria-label="Your mods"]');
+  await expect(yours.getByText(/File not found/)).toBeVisible();
+  await expect(yours.getByRole('button', { name: 'Locate…' })).toBeVisible();
+  await expect(yours.getByLabel('Use Wrapped')).toBeChecked();
+  await page.getByRole('button', { name: 'Remove TweeReplacer' }).click();
+  await expect(yours.getByText(/Already in the loader bundle/)).toHaveCount(0);
 });
 
 test('refuses to write anywhere the user did not choose', async () => {
